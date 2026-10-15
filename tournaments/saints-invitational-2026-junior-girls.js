@@ -41,6 +41,7 @@ window.TOURNAMENT={
   points:{win:2,draw:1,loss:0},
   tiebreak:"wa",
   format:"4 × 5 min quarters, stop-start. Size 3 ball. Short-course pool.",
+  poolShort:{[MAIN]:"Main pool",[NORTH]:"Oly North",[SOUTH]:"Oly South"},
   tracked:[{key:"H",team:"Herschel",label:"Herschel",longLabel:"Herschel Girls' Preparatory"}],
 
   teams:{

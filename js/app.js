@@ -397,7 +397,8 @@ function groupMiniHTML(){
   const mine=tracked().map(t=>t.team);
   return Object.keys(T.groups).map(grp=>{
     const st=E.standings(T,scores,grp);
-    return `<div class="groupMini"><h3>Group ${grp}</h3>${st.arr.map((x,i)=>`<div class="gm ${mine.includes(x.team)?"me":""}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
+    const gs=window.Bracket?window.Bracket.groupStyle(T,grp):{fg:"",bg:""};
+    return `<div class="groupMini" style="--gfg:${gs.fg};--gbg:${gs.bg}"><h3><span class="chip">${grp}</span>Group ${grp}</h3>${st.arr.map((x,i)=>`<div class="gm ${mine.includes(x.team)?"me":""}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
   }).join("");
 }
 function renderBracket(){

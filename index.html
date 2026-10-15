@@ -15,7 +15,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .wrap{max-width:860px;margin:auto;padding:14px 14px 54px}
-.wrap.wide{max-width:1600px}
+.wrap.wide{max-width:1800px}
 .hero{background:linear-gradient(135deg,var(--blue2),var(--blue));color:white;border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
 .hero h1{margin:0 0 5px;font-size:clamp(1.7rem,7vw,2.35rem);line-height:1.08}
 .hero p{margin:0;color:#dbe7ff}
@@ -114,8 +114,10 @@ button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight
 .bracketWrap{overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
 .bracketWrap svg{display:block}
 .groupGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.groupMini{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fafcff}
-.groupMini h3{margin:0 0 6px;font-size:.9rem;color:var(--blue)}
+.groupMini{border:1px solid var(--line);border-left:5px solid var(--gfg,#cfd6e2);border-radius:12px;padding:10px 12px;background:#fafcff}
+.groupMini h3{margin:0 0 6px;font-size:.9rem;color:var(--gfg,var(--blue));display:flex;align-items:center;gap:8px}
+.groupMini h3 .chip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;border-radius:5px;font-size:.72rem;font-weight:900;background:var(--gbg,#eef1f5);color:var(--gfg,#64748b)}
+.groupLegend{font-size:.84rem;color:var(--muted);margin-top:8px}
 .groupMini .gm{display:grid;grid-template-columns:18px 1fr auto;gap:6px;font-size:.84rem;padding:3px 0;border-top:1px solid #eef1f5}
 .groupMini .gm:first-of-type{border-top:0}
 .groupMini .gm .r{font-weight:900;color:var(--blue)}.groupMini .gm .p{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -210,7 +212,7 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
     </section>
     <section class="card">
       <h2 id="bracketTitle">Championship bracket</h2>
-      <div class="sub">Swipe sideways on a phone. Teams fill in as group tables settle and results come in; italics mark a projected or not-yet-known participant.</div>
+      <div class="sub">Swipe sideways on a phone. The letter chip is the team's group; a grey name is still a projection, and "W · QF 1" means the winner of that game. Scores appear as results come in, shoot-outs in brackets.</div>
       <div id="bracketMain" class="bracketWrap"></div>
     </section>
     <section class="card">
