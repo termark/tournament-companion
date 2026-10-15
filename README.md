@@ -90,6 +90,7 @@ No build step, package manager or framework. Supabase Free provides the shared `
 1. Copy the official PDF into the repo root (`Something-2026.pdf`).
 2. Create `tournaments/<id>.js` from the Saints file as a template. Everything the page knows about the tournament lives there:
    - `external` (optional) – links to the organiser's results site: per-game URL function, results/fixtures/venue pages
+   - `pools` / `venueMap` (optional) – a lat/lng per pool and for the venue; every game then gets a Google Maps link, and the Programme card lists the pools
    - `tracked` – the team(s) to follow, `points`, `tiebreak` (`"wa"` or `"simple"`), `caps` (which fixture column wears which cap colour), `arriveMinutes`, optional `poolShort` (short pool names for the bracket boxes)
    - `groups`, `teams` (full names/origin, for the importer), `aliases`
    - `games` – every game once, in PDF order, numbered `n` = 1…N. Group games carry `{team:"…"}` slots; knockout games reference `{group:"D",rank:1}`, `{winner:27}` or `{loser:27}`, and placing games carry `places:[5,6]`.

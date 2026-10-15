@@ -54,6 +54,14 @@ window.TOURNAMENT={
   tiebreak:"wa",
   format:"4 × 5 min quarters, stop-start. Size 3 ball. Short-course pool.",
   poolShort:{[MAIN]:"Main pool",[NORTH]:"Oly North",[SOUTH]:"Oly South"},
+  // Pool pins from MyComLink's facility pages (15 Oct 2026). Olympic North and South share one pin.
+  pools:{
+    [MAIN]: {lat:-26.086108,lng:28.012861,mycomlink:"https://www.mycomlink.co.za/facility.php?i=10074"},
+    [NORTH]:{lat:-26.085741,lng:28.012824,mycomlink:"https://www.mycomlink.co.za/facility.php?i=10077"},
+    [SOUTH]:{lat:-26.085741,lng:28.012824,mycomlink:"https://www.mycomlink.co.za/facility.php?i=10076"},
+    "Prep pool (warm-up)":{lat:-26.086505,lng:28.013107,mycomlink:"https://www.mycomlink.co.za/facility.php?i=10078"}
+  },
+  venueMap:{lat:-26.086108,lng:28.012861,label:"St Stithians Aquatic Centre"},
   tracked:[{key:"H",team:"Herschel",label:"Herschel",longLabel:"Herschel Girls' Preparatory"}],
 
   teams:{

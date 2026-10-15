@@ -60,6 +60,13 @@ async function run(tid){
   ok(d.getElementById("poolSchedule").querySelectorAll(".match").length===3,"3 group matches listed");
   ok(/Next game/.test(text()),"next game card shown");
   ok(d.getElementById("entryTable").querySelectorAll("tbody tr").length===4,"entry table has 4 positions");
+  if(T.pools){
+    const maps=[...d.querySelectorAll('#poolSchedule a[href*="google.com/maps"]')];
+    ok(maps.length===3,"map link on each group game");
+    ok(maps.every(a=>/query=-?\d+\.\d+%2C\d+\.\d+/.test(a.href)),"map links carry coordinates");
+    ok(d.querySelector('#nextGame a[href*="google.com/maps"]'),"map link on the next-game card");
+    ok(d.querySelectorAll('#eventsCard a[href*="google.com/maps"]').length===Object.keys(T.pools).length,"programme lists every pool with a map link");
+  }
   ok(/has not started/.test(d.getElementById("projection").textContent),"projection explains group not started");
   ok(d.querySelectorAll("#poolSchedule input:disabled").length===6,"score inputs disabled for public");
 

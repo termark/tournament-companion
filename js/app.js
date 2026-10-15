@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.2.0";
+const PAGE_VERSION="1.3.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -76,8 +76,14 @@ function init(tournament,reg,entry){
   if(T.external){
     const x=T.external, btns=$("pdfLink").parentElement;
     const add=(href,label)=>{ if(!href)return; const a=document.createElement("a"); a.className="action secondary"; a.href=href; a.target="_blank"; a.rel="noopener"; a.textContent=label; btns.appendChild(a); };
-    add(x.results,(x.name||"Official")+" results"); add(x.teamFixtures||x.fixtures,(x.name||"Official")+" fixtures"); add(x.venue,"Venue / map");
+    add(x.results,(x.name||"Official")+" results"); add(x.teamFixtures||x.fixtures,(x.name||"Official")+" fixtures");
+    if(T.venueMap) add(mapsUrl(T.venueMap.lat,T.venueMap.lng,T.venueMap.label),"Venue in Google Maps");
+    else add(x.venue,"Venue");
     const help=$("importHelpExt"); if(help) help.innerHTML=`Fastest route: open <a href="${esc(x.results)}" target="_blank" rel="noopener">${esc(x.name)} results</a>, select the whole page, copy, paste it here. Rows like <code>Herschel 13A 9 - 15 St Mary's Waverley 13A</code> are recognised; everything else on the page is ignored.`;
+  }
+  if(T.pools){
+    const pools=Object.entries(T.pools).map(([name,pin])=>`<a class="action secondary" href="${esc(mapsUrl(pin.lat,pin.lng,""))}" target="_blank" rel="noopener">${esc(name)} ↗</a>`).join("");
+    $("events").insertAdjacentHTML("afterend",`<h3>Pools</h3><div class="btns">${pools}</div><div class="sub">Each link opens the pool's pin in Google Maps. ${esc(T.address||"")}</div>`);
   }
   $("events").innerHTML=(T.events||[]).map(ev=>`<div class="match"><div class="day">${esc(E.dayLabel(T,ev.date))}</div><div class="time">${esc(ev.time)}</div><div><strong>${esc(ev.label)}</strong>${ev.detail?`<div class="meta">${esc(ev.detail)}</div>`:""}</div></div>`).join("")||"<div class='sub'>No programme items.</div>";
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
@@ -239,6 +245,13 @@ function whereLine(g,extra){
   return [g.pool,extra].filter(Boolean).map(esc).join(" • ");
 }
 function gameRef(g){ return `G#${g.n}`; }
+function mapsUrl(lat,lng,label){ return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(label?label+" @"+lat+","+lng:lat+","+lng); }
+function mapLink(g){
+  const pin=g.pool&&T.pools&&T.pools[g.pool];
+  if(pin) return ` <a class="extLink" href="${esc(mapsUrl(pin.lat,pin.lng,""))}" target="_blank" rel="noopener" title="${esc(g.pool)} in Google Maps">Map ↗</a>`;
+  if(T.venueMap) return ` <a class="extLink" href="${esc(mapsUrl(T.venueMap.lat,T.venueMap.lng,T.venueMap.label))}" target="_blank" rel="noopener">Map ↗</a>`;
+  return "";
+}
 function extLink(g){
   const x=T.external; if(!x||!x.game) return "";
   return ` <a class="extLink" href="${esc(x.game(g.n))}" target="_blank" rel="noopener">${esc(x.name||"details")} ↗</a>`;
@@ -251,11 +264,11 @@ function nextGameHTML(keys){
     const t=trackedByKey(k), nx=E.nextForTeam(T,scores,t.team);
     if(nx.kind==="group"){
       const g=nx.game, opp=g.a.team===t.team?g.b.team:g.a.team, side=g.a.team===t.team?"a":"b";
-      cands.push({k,t,g,sort:g.date+g.time,title:"vs "+opp,sub:`${day(g)} • ${g.pool||""} ${capsBadge(side)} • arrive by ${arrive(g)}`});
+      cands.push({k,t,g,sort:g.date+g.time,title:"vs "+opp,sub:`${day(g)} • ${g.pool||""} ${capsBadge(side)} • arrive by ${arrive(g)}${mapLink(g)}`});
     } else if(nx.kind==="knockout"){
       const s=nx.step, g=s.game;
       const proj=nx.walk.rank.confirmed?"":` <span class="badge soft">based on ${E.ordinal(nx.walk.usedRank)} in Group ${nx.walk.rank.group}${nx.walk.rank.anyPlayed?" (projected)":""}</span>`;
-      cands.push({k,t,g,sort:g.date+g.time,title:`${g.label} • vs ${oppText(s.opp)}`,sub:`${day(g)} • ${g.pool||""} ${capsBadge(s.side)} • arrive by ${arrive(g)}${proj}`});
+      cands.push({k,t,g,sort:g.date+g.time,title:`${g.label} • vs ${oppText(s.opp)}`,sub:`${day(g)} • ${g.pool||""} ${capsBadge(s.side)} • arrive by ${arrive(g)}${mapLink(g)}${proj}`});
     } else {
       cands.push({k,t,g:null,sort:"9",title:`Tournament complete — finished ${E.ordinal(nx.placing)}`,sub:""});
     }
@@ -273,7 +286,7 @@ function teamPoolHTML(t){
     const side=g.a.team===t.team?"a":"b", opp=side==="a"?g.b.team:g.a.team;
     return `<div class="match">
       <div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div>
-      <div><strong>vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}</div>${resultTagFor(g,t.team)}</div>
+      <div><strong>vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}${mapLink(g)}</div>${resultTagFor(g,t.team)}</div>
       <div class="scoreWrap">${scoreRows(g)}</div>
     </div>`;
   }).join("");
@@ -295,7 +308,7 @@ function stepBlock(s,team){
   const g=s.game;
   return `<div class="match"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div>
     <div><strong>${esc(g.label)}</strong><span class="badge">${gameRef(g)}</span>${capsBadge(s.side)}
-      <div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}</div>
+      <div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}${mapLink(g)}</div>
       <div style="margin-top:6px">vs ${partHTML(s.opp)}</div>
       ${team?resultTagFor(g,team):""}
       ${s.how==="assumed"?`<span class="resultTag ${s.outcome==="win"?"winTag":"lossTag"}">Assumed ${s.outcome}</span>`:""}
@@ -370,7 +383,7 @@ function allHTML(){
     return `<div class="match allMatch allMatch${i}">
       <div class="day">${esc(day(x.g))}</div><div class="time">${esc(x.g.time)}</div>
       <div><div class="allPrimary"><span class="teamBadge teamBadge${i}">${esc(x.t.label)}</span><strong>${x.kind==="ko"?esc(x.g.label)+" • ":""}vs ${esc(opp)}</strong>${capsBadge(side)}</div>
-      <div class="meta">${whereLine(x.g,"arrive by "+arrive(x.g))}</div>${resultTagFor(x.g,x.t.team)}</div>
+      <div class="meta">${whereLine(x.g,"arrive by "+arrive(x.g))}${mapLink(x.g)}</div>${resultTagFor(x.g,x.t.team)}</div>
     </div>`;
   }).join("");
 }
@@ -382,7 +395,7 @@ function resultEntry(g){
   const parts=g.stage==="group"?"":`<div style="margin-top:4px">${partHTML(p.a)} <span class="meta" style="display:inline">vs</span> ${partHTML(p.b)}</div>`;
   const sub=[g.stage==="group"?`Group ${g.group} • ${gameRef(g)}`:g.section,g.pool].filter(Boolean).map(esc).join(" • ");
   return `<div class="fixtureEntry">
-    <div class="fixtureTop"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div><div><div class="fixtureTeams">${title}</div><div class="meta">${sub}${extLink(g)}</div>${parts}</div></div>
+    <div class="fixtureTop"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div><div><div class="fixtureTeams">${title}</div><div class="meta">${sub}${extLink(g)}${mapLink(g)}</div>${parts}</div></div>
     ${scoreRows(g)}
     <div class="statusText">${resultTag(g)}</div>
   </div>`;
@@ -523,7 +536,7 @@ function simplePoolHTML(t){
   return E.sortByTime(E.teamGroupGames(T,t.team)).map(g=>{
     const side=g.a.team===t.team?"a":"b", opp=side==="a"?g.b.team:g.a.team;
     return `<div class="match"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div>
-      <div><strong>${esc(t.label)} vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}</div></div></div>`;
+      <div><strong>${esc(t.label)} vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}${mapLink(g)}</div></div></div>`;
   }).join("");
 }
 function simpleOutputHTML(t){
