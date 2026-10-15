@@ -51,7 +51,7 @@ async function run(tid){
   console.log("== "+tid+" — "+d.title);
   ok(d.title===T.pageTitle,"document title set");
   if(T.logos){
-    ok(!d.getElementById("heroTournamentLogo").classList.contains("hidden")&&d.querySelector("#heroTournamentLogo img"),"tournament logo in the hero");
+    ok(d.querySelector("#heroTitle img.heroTourneyInline"),"tournament logo inline in the hero title");
     ok(!d.getElementById("heroTeamLogo").classList.contains("hidden")&&d.querySelector("#heroTeamLogo img"),"team logo in the hero");
     [T.logos.tournament.src,T.logos.team.src,T.logos.team.mark].filter(Boolean).forEach(src=>ok(fs.existsSync(path.join(root,src)),"logo file exists: "+src));
   }

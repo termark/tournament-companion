@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.6.0";
+const PAGE_VERSION="1.6.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -46,10 +46,10 @@ function init(tournament,reg,entry){
   simple=Object.assign({team:tracked()[0].key,pos:"",assume:{}},JSON.parse(store.get(LS("simple"))||"{}"));
   if(!trackedByKey(simple.team)) simple.team=tracked()[0].key;
 
-  $("heroTitle").innerHTML=esc(T.heroTitle||tracked()[0].longLabel||tracked()[0].label)+"<br>"+esc(T.name);
   const L=T.logos||{};
+  const tourneyInline=L.tournament?`<img class="heroTourneyInline" src="${esc(L.tournament.src)}?v=${PAGE_VERSION}" alt="${esc(L.tournament.alt||"")}">`:"";
+  $("heroTitle").innerHTML=esc(T.heroTitle||tracked()[0].longLabel||tracked()[0].label)+"<br>"+esc(T.name)+tourneyInline;
   if(L.team){ $("heroTeamLogo").innerHTML=`<img src="${esc(L.team.src)}?v=${PAGE_VERSION}" alt="${esc(L.team.alt||"")}">`; $("heroTeamLogo").classList.remove("hidden"); }
-  if(L.tournament){ $("heroTournamentLogo").innerHTML=`<img src="${esc(L.tournament.src)}?v=${PAGE_VERSION}" alt="${esc(L.tournament.alt||"")}">`; $("heroTournamentLogo").classList.remove("hidden"); }
   $("heroSub").textContent=[T.section,T.venue,T.dates].filter(Boolean).join(" • ");
   let meta=`<span class="metaPill">${esc(T.pdfVersion||"Official PDF")}</span><span class="metaPill">Page v${PAGE_VERSION}</span>`;
   if(reg.length>1){
