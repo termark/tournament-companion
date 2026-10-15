@@ -99,9 +99,10 @@ function boxSVG(T,scores,node,x,ctx){
   h+="</g>";
   return h;
 }
-function edgeSVG(cx,cy,px,py,mine){
+function edgeSVG(cx,cy,px,py,mine,fromId,toId){
   const midx=(cx+px)/2;
-  return `<path class="bk-edge${mine?" bk-mine":""}" d="M${cx} ${cy} H${midx} V${py} H${px}"/>`;
+  const ids=(fromId&&toId)?` data-from="${esc(fromId)}" data-to="${esc(toId)}"`:"";
+  return `<path class="bk-edge${mine?" bk-mine":""}"${ids} d="M${cx} ${cy} H${midx} V${py} H${px}"/>`;
 }
 function rowY(node,i){ return node.y-BOX_H/2+HEAD+ROW*i+ROW/2; }
 
@@ -120,7 +121,7 @@ function drawTree(T,scores,node,rootX,dir,ctx){
       if(!c)return;
       const cx=c.x+dir*BOX_W/2, px=n.x-dir*BOX_W/2;
       const mine=ctx.pathIds.has(c.g.id)&&ctx.pathIds.has(n.g.id);
-      h+=edgeSVG(cx,c.y,px,rowY(n,i),mine);
+      h+=edgeSVG(cx,c.y,px,rowY(n,i),mine,c.g.id,n.g.id);
     });
   });
   nodes.forEach(n=>{ h+=boxSVG(T,scores,n,n.x,ctx); });
@@ -164,8 +165,8 @@ B.championshipSVG=function(T,scores,opts){
   // the final itself
   ctx.cols[centreX]={labels:[final.label],dates:new Set([final.date])};
   const fnode={g:final,depth:0,slots:[null,null],units:1,y:PAD_TOP+unitsMax*U/2};
-  if(L){ h+=edgeSVG(centreX-(BOX_W+COL_GAP)+BOX_W/2,L.y,centreX-BOX_W/2,rowY(fnode,0),ctx.pathIds.has(L.g.id)&&ctx.pathIds.has(final.id)); }
-  if(R){ h+=edgeSVG(centreX+(BOX_W+COL_GAP)-BOX_W/2,R.y,centreX+BOX_W/2,rowY(fnode,1),ctx.pathIds.has(R.g.id)&&ctx.pathIds.has(final.id)); }
+  if(L){ h+=edgeSVG(centreX-(BOX_W+COL_GAP)+BOX_W/2,L.y,centreX-BOX_W/2,rowY(fnode,0),ctx.pathIds.has(L.g.id)&&ctx.pathIds.has(final.id),L.g.id,final.id); }
+  if(R){ h+=edgeSVG(centreX+(BOX_W+COL_GAP)-BOX_W/2,R.y,centreX+BOX_W/2,rowY(fnode,1),ctx.pathIds.has(R.g.id)&&ctx.pathIds.has(final.id),R.g.id,final.id); }
   h+=boxSVG(T,scores,fnode,centreX,ctx);
   if(bronze){
     const bnode={g:bronze,depth:0,slots:[null,null],units:1,y:PAD_TOP+unitsMax*U+BOX_H/2+14};

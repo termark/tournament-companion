@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.1.0";
+const PAGE_VERSION="1.2.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -403,13 +403,52 @@ function allTablesHTML(){
 }
 
 /* ---------- bracket view ---------- */
+let bracketSel=null; // {group,rank} chosen in the group panels
 function groupMiniHTML(){
   const mine=tracked().map(t=>t.team);
   return Object.keys(T.groups).map(grp=>{
     const st=E.standings(T,scores,grp);
     const gs=window.Bracket?window.Bracket.groupStyle(T,grp):{fg:"",bg:""};
-    return `<div class="groupMini" style="--gfg:${gs.fg};--gbg:${gs.bg}"><h3><span class="chip">${grp}</span>Group ${grp}</h3>${st.arr.map((x,i)=>`<div class="gm ${mine.includes(x.team)?"me":""}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
+    return `<div class="groupMini" style="--gfg:${gs.fg};--gbg:${gs.bg}"><h3><span class="chip">${grp}</span>Group ${grp}</h3>${st.arr.map((x,i)=>{
+      const sel=bracketSel&&bracketSel.group===grp&&bracketSel.rank===i+1;
+      return `<div class="gm ${mine.includes(x.team)?"me":""} ${sel?"sel":""}" role="button" tabindex="0" onclick="selectGroupPos('${grp}',${i+1})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroupPos('${grp}',${i+1})}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`;
+    }).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
   }).join("");
+}
+function selectGroupPos(group,rank){
+  bracketSel=(bracketSel&&bracketSel.group===group&&bracketSel.rank===rank)?null:{group,rank};
+  renderBracket();
+}
+window.selectGroupPos=selectGroupPos;
+// Highlight the game a group position enters, and the route it would take on wins from there.
+function applyBracketSelection(){
+  const hint=$("bracketHint");
+  if(!bracketSel){ hint.classList.add("hidden"); return; }
+  const {group,rank}=bracketSel;
+  const entry=E.entryGame(T,group,rank);
+  if(!entry){ hint.classList.add("hidden"); return; }
+  // route on wins: entry → winner's next game → … (that is where the position is heading if it keeps winning)
+  const ids=[entry.id]; let g=entry, guard=0;
+  while(g&&guard++<10){ const nx=E.nextGame(T,g.n,"win"); if(!nx)break; ids.push(nx.id); g=nx; }
+  const svgs=document.querySelectorAll("#bracketMain svg, #bracketPlacings svg");
+  let first=null;
+  svgs.forEach(svg=>{
+    svg.querySelectorAll(".bk-sel").forEach(el=>el.classList.remove("bk-sel"));
+    ids.forEach(id=>{ const el=svg.querySelector(`[data-game="${id}"]`); if(el){ el.classList.add("bk-sel"); if(!first)first=el; } });
+    // the row for this position inside the entry game
+    const en=svg.querySelector(`[data-game="${entry.id}"]`);
+    if(en){ const side=(entry.a.group===group&&entry.a.rank===rank)?0:1; const rows=en.querySelectorAll(".bk-row"); if(rows[side])rows[side].classList.add("sel"); }
+    // edges along the winning route: an edge is drawn between consecutive games, mark by data attributes
+    for(let i=0;i+1<ids.length;i++){ svg.querySelectorAll(`.bk-edge[data-from="${ids[i]}"][data-to="${ids[i+1]}"]`).forEach(e=>e.classList.add("bk-sel")); }
+  });
+  const st=E.standings(T,scores,group), team=st.anyPlayed&&st.arr[rank-1]?st.arr[rank-1].team:null;
+  hint.innerHTML=`<strong>${E.ordinal(rank)} in Group ${esc(group)}</strong>${team?` (currently ${esc(team)}${st.confirmed?"":", projected"})`:""} plays <strong>${esc(entry.label)}</strong> on ${esc(day(entry))} at <strong>${esc(entry.time)}</strong>${entry.pool?" in the "+esc(entry.pool):""}. The orange trail is the route from there on wins.`;
+  hint.classList.remove("hidden");
+  // bring the entry game into view
+  try{
+    const en=document.querySelector(`#bracketMain [data-game="${entry.id}"] rect, #bracketPlacings [data-game="${entry.id}"] rect`);
+    if(en){ const wrap=en.closest(".bracketWrap"); const bb=en.getBBox(); if(wrap&&wrap.scrollWidth>wrap.clientWidth) wrap.scrollLeft=Math.max(0,bb.x+bb.width/2-wrap.clientWidth/2); }
+  }catch(e){}
 }
 function renderBracket(){
   if(!window.Bracket){ $("bracketMain").innerHTML="<div class='sub'>Bracket module not loaded.</div>"; return; }
@@ -425,6 +464,7 @@ function renderBracket(){
     if(mine&&wrap.scrollWidth>wrap.clientWidth){ const bb=mine.getBBox(); wrap.scrollLeft=Math.max(0,bb.x+bb.width/2-wrap.clientWidth/2); }
   }catch(e){}
   $("bracketPlacings").innerHTML=all.filter(x=>!x.final).map(x=>`<div class="resultGroup"><h3>${esc(x.title)}</h3><div class="bracketWrap">${x.svg}</div></div>`).join("")||"<div class='sub'>No placing games.</div>";
+  applyBracketSelection();
 }
 
 /* ---------- bulk import ---------- */

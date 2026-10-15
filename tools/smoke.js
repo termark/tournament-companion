@@ -116,6 +116,15 @@ async function run(tid){
   ok(d.querySelectorAll("#bracketView .bk-mine").length>0,"bracket highlights the tracked team's path");
   ok(d.querySelectorAll("#bracketGroups .groupMini").length===Object.keys(T.groups).length,"group panels rendered");
   ok(d.querySelector("#bracketMain svg"),"championship svg present");
+  // click "2nd in Group D" → its entry game and winning route light up, hint names the game
+  const grpD=Object.keys(T.groups)[3], entry=E.entryGame(T,grpD,2);
+  w.selectGroupPos(grpD,2);
+  ok(d.querySelector(`#bracketView [data-game="${entry.id}"].bk-sel`),"selecting 2nd in Group D highlights its entry game");
+  ok(d.querySelectorAll("#bracketView .bk-game.bk-sel").length>=2,"winning route from the entry game highlighted");
+  ok(new RegExp(entry.label.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).test(d.getElementById("bracketHint").textContent),"hint names the entry game");
+  ok(d.querySelector("#bracketGroups .gm.sel"),"group row shows as selected");
+  w.selectGroupPos(grpD,2);
+  ok(!d.querySelector("#bracketView .bk-sel")&&d.getElementById("bracketHint").classList.contains("hidden"),"second click clears the selection");
 
   // simple planner
   click('.tab[data-view="SIMPLE"]');
