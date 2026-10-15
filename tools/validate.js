@@ -186,6 +186,40 @@ function bulk(T){
   ok(p.out[1].scoreA===2&&p.out[1].scoreB===2,"bulk: reversed order handled");
 }
 
+/* ---------- a results page copied from MyComLink (verbatim shape seen 15 Oct 2026) ---------- */
+function mycomlink(T){
+  if(T.id!=="saints-invitational-2026-junior-girls") return;
+  const page=[
+    "Team Sport Results","Criteria: Saints Water Polo Invitational Junior Girls","Entry 1 to 6 of the 6 matching your selection criteria","Page 1 of 1","",
+    "Fri, 16-Oct-2026 :: Water Polo","",
+    "09:30\tGroup D :: Saints Olympic North\t\t\tdetails","Herschel 13A\t9\t-\t15\tSt Mary's Waverley 13A","",
+    "09:30\tGroup B :: Saints Olympic South\t\t\tdetails","Umhlali Ballito 13A\t4\t-\t4\tRoedean 13A","",
+    "10:10\tGroup A :: Saints Olympic South\t\t\tdetails","St. Mary's DSG 13A\t6\t-\t2\tChisipite 13A","",
+    "08:50\tGroup A :: Saints Polo Pool\t\t\tdetails","Stingray Academy 13A\tWin\t-\tForfeit\tDurban Girls' 13A","",
+    "10:10\tGroup C :: Saints Polo Pool\t\t\tdetails","Chelsea 13A\t3\t-\t7\tReddam Bedfordview 13A","",
+    "09:30\tGroup C :: Saints Polo Pool\t\t\tdetails","Wynberg Girls' 13A\t5\t-\t1\tFalcon College 13A","",
+    "Home About Results Fixtures News Events Organisations Get Involved Contact Us",
+    "© 2012-2026, MyComLink : Users of the MyComLink website are assumed to have read and agreed to our Terms and Conditions"
+  ].join("\n");
+  const p=E.parseBulk(T,{},page);
+  eq(p.errors.length,0,"mycomlink: no unrecognised lines ("+p.errors.join(" | ")+")");
+  eq(p.out.length,6,"mycomlink: six results parsed");
+  const by={}; p.out.forEach(x=>by[x.game.n]=x);
+  ok(by[4]&&by[4].scoreA===9&&by[4].scoreB===15,"mycomlink: G4 Herschel 9-15 St Mary's Waverley");
+  ok(by[2]&&by[2].scoreA===4&&by[2].scoreB===4,"mycomlink: G2 Umhlali 4-4 Roedean");
+  ok(by[5]&&by[5].scoreA===6&&by[5].scoreB===2,"mycomlink: G5 DSG Kloof 6-2 Chisipite");
+  ok(by[1]&&by[1].scoreA===1&&by[1].scoreB===0,"mycomlink: G1 forfeit → 1-0 to Stingray");
+  ok(by[7]&&by[7].scoreA===3&&by[7].scoreB===7,"mycomlink: G7 Chelsea 3-7 Reddam");
+  ok(by[3]&&by[3].scoreA===5&&by[3].scoreB===1,"mycomlink: G3 Wynberg 5-1 Falcon");
+  // every team name mycomlink uses maps to one of ours
+  const names=["Stingray Academy","Durban Girls'","Umhlali Ballito","Roedean","Wynberg Girls'","Falcon College","Herschel","St Mary's Waverley","St. Mary's DSG","Chisipite","Kingsmead","Hellenic Academy","Chelsea","Reddam Bedfordview","Our Lady of Fatima","St Dominic's"];
+  const aliases=E.aliasMap(T);
+  names.forEach(n=>ok(!!aliases[E.normalise(n)],"mycomlink name resolves: "+n));
+  eq(new Set(names.map(n=>aliases[E.normalise(n)])).size,16,"mycomlink names map to 16 distinct teams");
+  ok(T.external&&T.external.game(4)==="https://www.mycomlink.co.za/fixture.php?i=83381","mycomlink: G4 → fixture 83381");
+  ok(T.external.game(52)==="https://www.mycomlink.co.za/fixture.php?i=83429","mycomlink: G52 → fixture 83429");
+}
+
 /* ---------- tie-break behaviour ---------- */
 function tiebreak(T){
   const grp=Object.keys(T.groups)[0], [t1,t2,t3,t4]=T.groups[grp];
@@ -300,7 +334,7 @@ dataFiles.forEach(file=>{
   const listed=registry.some(r=>r.id===T.id);
   console.log("== "+T.id+" ("+T.games.length+" games, "+E.allTeams(T).length+" teams"+(listed?"":", not in registry")+")");
   const before=failures;
-  structural(T); simulation(T); bulk(T); tiebreak(T); brackets(T);
+  structural(T); simulation(T); bulk(T); tiebreak(T); brackets(T); mycomlink(T);
   if(T.id==="saints-invitational-2026-junior-girls") expectSaints(T);
   if(T.id==="mackenzie-cup-2026") expectMackenzie(T);
   console.log("  "+(failures===before?"OK":"FAILED")+" — "+checks+" checks so far");

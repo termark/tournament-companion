@@ -215,6 +215,8 @@ E.nextForTeam=function(T,scores,team){
 
 /* ---------- bulk result import ---------- */
 E.normalise=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+// Age-group suffixes like "13A" / "U13" / "u/13" that result feeds append to team names.
+E.stripSuffix=s=>String(s).replace(/\s+(u\/?\s?\d{1,2}[a-z]?|\d{1,2}[a-z])\b/gi," ");
 E.aliasMap=function(T){
   const m={};
   E.allTeams(T).forEach(t=>m[E.normalise(t)]=t);
@@ -237,7 +239,11 @@ E.parseBulk=function(T,scores,text){
   const keys=Object.keys(aliases).sort((a,b)=>b.length-a.length);
   const out=[],errors=[];
   String(text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach((line,idx)=>{
-    const norm=E.normalise(line);
+    if(/^(sports? (fixtures|results)|team sport results|criteria:|entry \d|page \d|home about|©|\w{3}, \d{2}-\w{3}-\d{4})/i.test(line)) return; // page chrome from a copied results list
+    if(!/\d/.test(line)) return; // a line with no score is not a result
+    let norm=E.normalise(E.stripSuffix(line).replace(/\bwin\b\s*-\s*\bforfeit\b/i," 1 - 0 ").replace(/\bforfeit\b\s*-\s*\bwin\b/i," 0 - 1 "));
+    // a trailing time/venue fragment ("09:30 Group D :: Saints Polo Pool") belongs to a fixture row, not a result
+    if(/^\d{1,2} \d{2} /.test(norm)) return;
     let la=null,ra=null,lt=null,rt=null;
     for(const a of keys){ if(norm.startsWith(a+" ")){la=a;lt=aliases[a];break;} }
     for(const a of keys){ if(norm.endsWith(" "+a)){ra=a;rt=aliases[a];break;} }

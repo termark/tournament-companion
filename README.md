@@ -35,6 +35,12 @@ Public visitors are read-only for the shared results. To update scores:
 
 Progression and placing games cannot end in a draw — the tournament goes to a penalty shoot-out. Enter the full-time score as normal; the page then shows a second **shoot-out** row for the penalty score, and uses it to decide the winner and advance the bracket.
 
+### Results from MyComLink
+
+The organisers publish this tournament on MyComLink (event 12099): [fixtures](https://www.mycomlink.co.za/fixture_list.php?eid=12099&dlim=~), [results](https://www.mycomlink.co.za/result_list.php?eid=12099&dlim=~), [Herschel's games](https://www.mycomlink.co.za/fixture_list.php?eid=12099&org=261&agrp=34&dlim=~). Every game on the page links to its MyComLink fixture page (`fixture.php?i=83377 + game number`, verified for all 52), and the Resources card links the event's results and the venue.
+
+MyComLink forbids automated fetching, so results are not polled. The route is: open the results page, select all, copy, paste into **Quick import**. The importer recognises their row shape (`Herschel 13A	9	-	15	St Mary's Waverley 13A`), their short school names, the `13A` age-group suffix and `Win - Forfeit`, and ignores the rest of the page.
+
 ### Quick result import
 
 The **Results** tab accepts one result per line, in either direction:
@@ -83,6 +89,7 @@ No build step, package manager or framework. Supabase Free provides the shared `
 
 1. Copy the official PDF into the repo root (`Something-2026.pdf`).
 2. Create `tournaments/<id>.js` from the Saints file as a template. Everything the page knows about the tournament lives there:
+   - `external` (optional) – links to the organiser's results site: per-game URL function, results/fixtures/venue pages
    - `tracked` – the team(s) to follow, `points`, `tiebreak` (`"wa"` or `"simple"`), `caps` (which fixture column wears which cap colour), `arriveMinutes`, optional `poolShort` (short pool names for the bracket boxes)
    - `groups`, `teams` (full names/origin, for the importer), `aliases`
    - `games` – every game once, in PDF order, numbered `n` = 1…N. Group games carry `{team:"…"}` slots; knockout games reference `{group:"D",rank:1}`, `{winner:27}` or `{loser:27}`, and placing games carry `places:[5,6]`.

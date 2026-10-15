@@ -73,6 +73,12 @@ function init(tournament,reg,entry){
   // static cards
   if(window.Bracket&&!$("bracketCss")){ const st=document.createElement("style"); st.id="bracketCss"; st.textContent=window.Bracket.css; document.head.appendChild(st); }
   $("pdfLink").href=T.pdf;
+  if(T.external){
+    const x=T.external, btns=$("pdfLink").parentElement;
+    const add=(href,label)=>{ if(!href)return; const a=document.createElement("a"); a.className="action secondary"; a.href=href; a.target="_blank"; a.rel="noopener"; a.textContent=label; btns.appendChild(a); };
+    add(x.results,(x.name||"Official")+" results"); add(x.teamFixtures||x.fixtures,(x.name||"Official")+" fixtures"); add(x.venue,"Venue / map");
+    const help=$("importHelpExt"); if(help) help.innerHTML=`Fastest route: open <a href="${esc(x.results)}" target="_blank" rel="noopener">${esc(x.name)} results</a>, select the whole page, copy, paste it here. Rows like <code>Herschel 13A 9 - 15 St Mary's Waverley 13A</code> are recognised; everything else on the page is ignored.`;
+  }
   $("events").innerHTML=(T.events||[]).map(ev=>`<div class="match"><div class="day">${esc(E.dayLabel(T,ev.date))}</div><div class="time">${esc(ev.time)}</div><div><strong>${esc(ev.label)}</strong>${ev.detail?`<div class="meta">${esc(ev.detail)}</div>`:""}</div></div>`).join("")||"<div class='sub'>No programme items.</div>";
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
   $("footer").innerHTML=`termark/tournament-companion • ${esc(T.name)} • page v${PAGE_VERSION}<br>Static GitHub Pages app • shared results via Supabase, cached in this browser`;
@@ -233,6 +239,10 @@ function whereLine(g,extra){
   return [g.pool,extra].filter(Boolean).map(esc).join(" • ");
 }
 function gameRef(g){ return `G#${g.n}`; }
+function extLink(g){
+  const x=T.external; if(!x||!x.game) return "";
+  return ` <a class="extLink" href="${esc(x.game(g.n))}" target="_blank" rel="noopener">${esc(x.name||"details")} ↗</a>`;
+}
 
 /* ---------- next game card ---------- */
 function nextGameHTML(keys){
@@ -263,7 +273,7 @@ function teamPoolHTML(t){
     const side=g.a.team===t.team?"a":"b", opp=side==="a"?g.b.team:g.a.team;
     return `<div class="match">
       <div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div>
-      <div><strong>vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}</div>${resultTagFor(g,t.team)}</div>
+      <div><strong>vs ${esc(opp)}</strong>${capsBadge(side)}<div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}</div>${resultTagFor(g,t.team)}</div>
       <div class="scoreWrap">${scoreRows(g)}</div>
     </div>`;
   }).join("");
@@ -285,7 +295,7 @@ function stepBlock(s,team){
   const g=s.game;
   return `<div class="match"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div>
     <div><strong>${esc(g.label)}</strong><span class="badge">${gameRef(g)}</span>${capsBadge(s.side)}
-      <div class="meta">${whereLine(g,"arrive by "+arrive(g))}</div>
+      <div class="meta">${whereLine(g,"arrive by "+arrive(g))}${extLink(g)}</div>
       <div style="margin-top:6px">vs ${partHTML(s.opp)}</div>
       ${team?resultTagFor(g,team):""}
       ${s.how==="assumed"?`<span class="resultTag ${s.outcome==="win"?"winTag":"lossTag"}">Assumed ${s.outcome}</span>`:""}
@@ -372,7 +382,7 @@ function resultEntry(g){
   const parts=g.stage==="group"?"":`<div style="margin-top:4px">${partHTML(p.a)} <span class="meta" style="display:inline">vs</span> ${partHTML(p.b)}</div>`;
   const sub=[g.stage==="group"?`Group ${g.group} • ${gameRef(g)}`:g.section,g.pool].filter(Boolean).map(esc).join(" • ");
   return `<div class="fixtureEntry">
-    <div class="fixtureTop"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div><div><div class="fixtureTeams">${title}</div><div class="meta">${sub}</div>${parts}</div></div>
+    <div class="fixtureTop"><div class="day">${esc(day(g))}</div><div class="time">${esc(g.time)}</div><div><div class="fixtureTeams">${title}</div><div class="meta">${sub}${extLink(g)}</div>${parts}</div></div>
     ${scoreRows(g)}
     <div class="statusText">${resultTag(g)}</div>
   </div>`;

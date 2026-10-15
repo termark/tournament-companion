@@ -123,6 +123,7 @@ button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight
 .groupMini .gm .r{font-weight:900;color:var(--blue)}.groupMini .gm .p{color:var(--muted);font-variant-numeric:tabular-nums}
 .groupMini .gm.me{font-weight:800}
 @media(max-width:700px){.groupGrid{grid-template-columns:1fr 1fr}}
+.extLink{font-size:.8rem;font-weight:700;color:var(--blue);text-decoration:none;margin-left:6px;white-space:nowrap}
 .footer{margin-top:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
 .projection{font-size:1rem;line-height:1.45}
 .projection strong{color:var(--blue)}
@@ -241,6 +242,7 @@ Kingsmead 2 2 Roedean"></textarea>
           <button id="previewImport" class="action secondary" type="button">Preview / edit</button>
           <button id="applyImport" class="action primary" type="button">Approve &amp; submit</button>
         </div>
+        <div class="importHelp" id="importHelpExt"></div>
         <div class="importHelp">
           Accepted examples include <code>Team A 3-5 Team B</code> or <code>Team A 3 5 Team B</code>. Short names and school names from the official PDF are recognised.
           Knockout games are matched once their participants are known from earlier results.
