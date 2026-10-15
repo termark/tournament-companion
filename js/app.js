@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.5.0";
+const PAGE_VERSION="1.5.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -80,7 +80,7 @@ function init(tournament,reg,entry){
     if(T.venueMap) add(mapsUrl(T.venueMap.lat,T.venueMap.lng,T.venueMap.label),"Venue in Google Maps");
     else add(x.venue,"Venue");
     if(x.results){ $("feedBox").classList.remove("hidden"); $("feedOpen").href=x.results; $("feedTitle").textContent="Update from "+(x.name||"the official results"); }
-    const help=$("importHelpExt"); if(help) help.innerHTML=`Fastest route: open <a href="${esc(x.results)}" target="_blank" rel="noopener">${esc(x.name)} results</a>, select the whole page, copy, paste it here. Rows like <code>Herschel 13A 9 - 15 St Mary's Waverley 13A</code> are recognised; everything else on the page is ignored.`;
+    const help=$("importHelpExt"); if(help) help.innerHTML=`For scores that are not on ${esc(x.name)} yet (or are wrong there): type them here, one per line. Pasting a copied ${esc(x.name)} page also works.`;
   }
   if(T.pools){
     const pools=Object.entries(T.pools).map(([name,pin])=>`<a class="action secondary" href="${esc(mapsUrl(pin.lat,pin.lng,""))}" target="_blank" rel="noopener">${esc(name)} ↗</a>`).join("");

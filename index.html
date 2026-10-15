@@ -160,9 +160,9 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.5.0"></script>
-<script src="js/bracket.js?v=1.5.0"></script>
-<script src="tournaments/registry.js?v=1.5.0"></script>
+<script src="js/engine.js?v=1.5.1"></script>
+<script src="js/bracket.js?v=1.5.1"></script>
+<script src="tournaments/registry.js?v=1.5.1"></script>
 </head>
 <body>
 <div class="wrap">
@@ -247,7 +247,7 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
   <section id="resultsView" class="hidden">
     <section class="card">
       <h2>All results</h2>
-      <div class="sub">Shared results are loaded from Supabase. Only a signed-in editor can enter or change scores.</div>
+      <div class="sub">Shared results are the same for everyone. Anyone can pull the latest scores from the official feed with the button below; signing in as an editor is only needed to type or correct a score by hand.</div>
       <div id="syncStatus" class="syncLine">Connecting to shared results…</div>
 
       <div id="feedBox" class="bulkBox feedBox noPrint hidden">
@@ -275,7 +275,7 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 
       <div class="bulkBox noPrint">
         <strong>Quick import (editors)</strong>
-        <div class="sub">Paste results from a screenshot/photo transcription or any text source, one per line.</div>
+        <div class="sub">Hand entry for scores the official feed doesn't have yet — from the scoreboard, a photo, or a WhatsApp message — one per line.</div>
         <textarea id="bulkInput" placeholder="Examples:
 Herschel 5-3 St Dominic's
 Kingsmead 2 2 Roedean"></textarea>
@@ -357,6 +357,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.5.0"></script>
+<script src="js/app.js?v=1.5.1"></script>
 </body>
 </html>
