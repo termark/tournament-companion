@@ -12,6 +12,9 @@
 
 alter table public.match_results enable row level security;
 
+-- Policies only filter what a role is already granted; the anon role needs the table privileges too.
+grant select, insert, update on public.match_results to anon;
+
 -- Only sensible rows: known id shape, small non-negative scores.
 alter table public.match_results
   drop constraint if exists match_results_sane,
