@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17316f">
+<title>Tournament companion</title>
+<style>
+:root{
+  --bg:#f4f6fa;--card:#fff;--ink:#172033;--muted:#687386;--line:#dfe5ee;
+  --blue:#1f3f91;--blue2:#17316f;--soft:#eef3ff;--green:#0f766e;--greenSoft:#ecfdf5;
+  --orange:#9a4d0b;--orangeSoft:#fff7ed;--red:#b42318;--redSoft:#fff1f1;
+  --amber:#8a5a00;--amberSoft:#fff8db;--shadow:0 8px 26px rgba(19,35,70,.08)
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:860px;margin:auto;padding:14px 14px 54px}
+.hero{background:linear-gradient(135deg,var(--blue2),var(--blue));color:white;border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 5px;font-size:clamp(1.7rem,7vw,2.35rem);line-height:1.08}
+.hero p{margin:0;color:#dbe7ff}
+.heroMeta{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.metaPill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.13);font-size:.78rem}
+.hero select{width:auto;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.13);color:#fff;font-size:.8rem}
+.hero select option{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px;box-shadow:var(--shadow)}
+h2{margin:0 0 13px;font-size:1.08rem}
+h3{margin:17px 0 9px;font-size:1rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{flex:1 1 120px;border:1px solid #ccd5e4;background:#f8fafc;color:#344054;padding:11px 8px;border-radius:12px;font-weight:800;cursor:pointer}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.next{background:linear-gradient(135deg,#eef3ff,#fafcff);border-color:#d8e1f7}
+.nextLabel{text-transform:uppercase;letter-spacing:.08em;font-size:.74rem;font-weight:850;color:var(--blue)}
+.nextTime{font-size:2.15rem;font-weight:900;color:var(--blue);margin:4px 0 0}
+.nextOpponent{font-size:1.18rem;font-weight:850}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px;line-height:1.4}
+.match{display:grid;grid-template-columns:92px 72px 1fr;gap:9px;padding:13px 0;border-top:1px solid var(--line);align-items:start}
+.match:first-child{border-top:0;padding-top:0}
+.scoreWrap{grid-column:1/-1}.scoreWrap:empty{display:none}
+.scoreWrap .scoreRow{margin-top:2px}
+.day{font-weight:760}.time{font-weight:900;color:var(--blue);font-variant-numeric:tabular-nums}
+.meta{font-size:.86rem;color:var(--muted);margin-top:4px;line-height:1.4}
+.badge{display:inline-block;border-radius:999px;padding:2px 7px;font-size:.74rem;font-weight:850;margin-left:5px;background:#edf1ff;color:#4438a8;vertical-align:middle}
+.badge.soft{background:#f3f4f6;color:#52525b}
+.badge.caps{background:#fff;border:1px solid #cfd6e2;color:#344054}
+.badge.capsBlue{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.badge.capsWhite{background:#fff;color:#1f2937;border-color:#9ca3af}
+.placeholder{font-weight:800;color:#5b6475}
+.scoreRow{display:grid;grid-template-columns:minmax(0,1fr) 62px 14px 62px minmax(0,1fr);gap:7px;align-items:center;margin-top:10px}
+.scoreRow input{width:100%;padding:10px;border:1px solid #cfd6e2;border-radius:10px;font-size:1rem;text-align:center}
+.scoreRow .teamLeft{text-align:right;font-weight:750;min-width:0}.scoreRow .teamRight{font-weight:750;min-width:0}
+.scoreRow.pens{margin-top:6px}.scoreRow.pens .teamLeft,.scoreRow.pens .teamRight{font-weight:600;font-size:.82rem;color:var(--muted)}
+.scoreRow.pens input{padding:7px;font-size:.9rem}
+.resultTag{display:inline-block;margin-top:8px;padding:4px 8px;border-radius:999px;font-size:.77rem;font-weight:850}
+.winTag{background:var(--greenSoft);color:var(--green)} .lossTag{background:var(--redSoft);color:var(--red)}
+.drawTag{background:#f3f4f6;color:#52525b}.upcomingTag{background:#eef2ff;color:#4338ca}.pensTag{background:var(--amberSoft);color:var(--amber)}
+.tableWrap{overflow-x:auto}
+.table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:560px}
+.table th,.table td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.table th:first-child,.table td:first-child{text-align:left}
+.table.compact{min-width:0;font-size:.88rem}
+.table.compact th,.table.compact td{text-align:left;white-space:normal}
+.myRow{background:#f8faff}
+.rank{font-weight:900;color:var(--blue)}
+.routeBox{margin-top:13px;padding:14px;border:1px solid #d9e2f2;border-radius:13px;background:#fafcff}
+.routeTitle{font-weight:850;margin-bottom:8px}
+.outcomes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.outcome{border-radius:12px;padding:12px}.outcome strong{display:block;margin-bottom:3px}
+.ifwin{background:var(--greenSoft);border:1px solid #bdebdc}.ifloss{background:var(--orangeSoft);border:1px solid #fed7aa}
+.notice{padding:12px;border-radius:12px;font-size:.88rem;line-height:1.45}
+.warn{background:var(--amberSoft);border:1px solid #f1df9e;color:#6d5400}
+.ok{background:var(--greenSoft);border:1px solid #bdebdc;color:#115e59}
+.notice+.notice{margin-top:8px}
+select{width:100%;padding:13px 14px;border:1px solid #cfd6e2;border-radius:12px;background:white;font-size:1rem;color:var(--ink)}
+select.inline{width:auto;padding:8px 10px;font-size:.9rem;margin-top:8px}
+label{display:block;font-weight:750;margin-bottom:6px}
+.row{margin-top:13px}.hidden{display:none!important}
+.resultGroup{margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
+.resultGroup:first-child{border-top:0;padding-top:0}
+.fixtureEntry{padding:12px 0;border-top:1px solid #edf0f4}
+.fixtureEntry:first-child{border-top:0}
+.fixtureTop{display:grid;grid-template-columns:84px 58px 1fr;gap:8px;align-items:start}
+.fixtureTeams{font-weight:780}
+.statusText{margin-top:6px}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--blue);color:white}.secondary{background:#e8edf5;color:#2f3b52}
+.teamBadge{display:inline-flex;align-items:center;justify-content:center;min-width:54px;padding:5px 9px;border-radius:999px;font-size:.78rem;font-weight:900;letter-spacing:.02em}
+.teamBadge0{background:var(--blue);color:#fff}
+.teamBadge1{background:#fff;color:var(--blue2);border:2px solid var(--blue2)}
+.allMatch{position:relative;padding-left:12px}
+.allMatch0{border-left:5px solid var(--blue)}
+.allMatch1{border-left:5px solid #6b7280}
+.allPrimary{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.allPrimary strong{font-size:1rem}
+.nextTeamBadge{margin-bottom:8px}
+.simpleHero{background:linear-gradient(135deg,#f8fbff,#eef3ff);border:1px solid #d9e3f7}
+.simpleGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.simpleSummary{margin-top:14px;padding:14px;border-radius:13px;background:#fafcff;border:1px solid #d9e2f2}
+.simpleNote{margin-top:10px;font-size:.86rem;color:var(--muted);line-height:1.4}
+.bulkBox{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:13px;background:#fafcff}
+.bulkBox textarea{width:100%;min-height:150px;padding:12px;border:1px solid #cfd6e2;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem;resize:vertical}
+.importHelp{font-size:.84rem;color:var(--muted);line-height:1.45;margin-top:8px}
+.importPreview{margin-top:10px;padding:10px;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:.88rem}
+.previewTable{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9rem}
+.previewTable th,.previewTable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.previewTable th{text-align:left;color:var(--muted);font-size:.8rem}
+.previewTable input[type="number"]{width:58px;padding:8px;border:1px solid #cfd6e2;border-radius:8px;text-align:center;font-size:1rem}
+.previewTable input[type="checkbox"]{transform:scale(1.15)}
+.previewConflict{background:#fff8db}
+.previewExisting{font-size:.78rem;color:var(--muted);margin-top:3px}
+.previewError{margin-top:8px;color:var(--red);font-size:.86rem;line-height:1.4}
+.previewOk{color:var(--green);font-weight:800}
+.footer{margin-top:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
+.projection{font-size:1rem;line-height:1.45}
+.projection strong{color:var(--blue)}
+.placingBig{font-size:1.6rem;font-weight:900;color:var(--blue);margin-top:8px}
+ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;font-size:.9rem}
+@media(max-width:560px){
+  .match{grid-template-columns:82px 60px 1fr;font-size:.94rem}
+  .fixtureTop{grid-template-columns:78px 54px 1fr}
+  .outcomes{grid-template-columns:1fr}
+  .simpleGrid{grid-template-columns:1fr}
+  .scoreRow{grid-template-columns:minmax(0,1fr) 55px 12px 55px minmax(0,1fr);font-size:.88rem}
+}
+.authbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.authstate{font-size:.82rem;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.13)}
+.authpanel{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border:1px solid var(--line);color:var(--ink)}
+.authpanel input{width:100%;padding:11px 12px;border:1px solid #cfd6e2;border-radius:10px;font-size:1rem;margin-top:8px}
+.syncLine{font-size:.82rem;color:var(--muted);margin-top:8px}
+.readonly{opacity:.62}
+@media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/engine.js"></script>
+<script src="tournaments/registry.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1 id="heroTitle">Loading…</h1>
+    <p id="heroSub"></p>
+    <div class="heroMeta" id="heroMeta"></div>
+    <div class="authbar noPrint">
+      <span id="authState" class="authstate">Connecting…</span>
+      <button id="authButton" class="action secondary" type="button">Editor sign in</button>
+      <button id="signOutButton" class="action secondary hidden" type="button">Sign out</button>
+    </div>
+    <div id="authPanel" class="authpanel hidden noPrint">
+      <strong>Editor sign in</strong>
+      <div class="sub">Public visitors can view shared results. Sign in only to enter or change scores.</div>
+      <input id="authEmail" type="email" autocomplete="username" placeholder="Email address">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+      <div class="btns">
+        <button id="loginButton" class="action primary" type="button">Sign in</button>
+        <button id="cancelLoginButton" class="action secondary" type="button">Cancel</button>
+      </div>
+      <div id="authMessage" class="syncLine"></div>
+    </div>
+  </section>
+
+  <section class="card noPrint">
+    <div class="tabs" id="tabs"></div>
+  </section>
+
+  <section class="card next" id="nextCard">
+    <div class="nextLabel">Next game</div>
+    <div id="nextGame"></div>
+  </section>
+
+  <section id="teamView">
+    <section class="card">
+      <h2 id="poolTitle">Group matches</h2>
+      <div id="poolSchedule"></div>
+    </section>
+    <section class="card">
+      <h2 id="standingsTitle">Live group standings</h2>
+      <div id="poolTable"></div>
+      <div id="tieNotice" class="sub"></div>
+    </section>
+    <section class="card">
+      <h2>Knockout route</h2>
+      <div id="projection" class="projection"></div>
+      <div id="knockoutOutput"></div>
+      <div class="btns noPrint">
+        <button class="action primary" type="button" onclick="window.print()">Print / Save PDF</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Where each group position leads</h2>
+      <div id="entryTable"></div>
+    </section>
+  </section>
+
+  <section id="allView" class="card hidden">
+    <h2 id="allTitle">All matches</h2>
+    <div id="allTimeline"></div>
+  </section>
+
+  <section id="resultsView" class="hidden">
+    <section class="card">
+      <h2>All results</h2>
+      <div class="sub">Shared results are loaded from Supabase. Only a signed-in editor can enter or change scores.</div>
+      <div id="syncStatus" class="syncLine">Connecting to shared results…</div>
+      <div class="bulkBox noPrint">
+        <strong>Quick import</strong>
+        <div class="sub">Paste results from a screenshot/photo transcription or any text source, one per line.</div>
+        <textarea id="bulkInput" placeholder="Examples:
+Herschel 5-3 St Dominic's
+Kingsmead 2 2 Roedean"></textarea>
+        <div class="btns">
+          <button id="previewImport" class="action secondary" type="button">Preview / edit</button>
+          <button id="applyImport" class="action primary" type="button">Approve &amp; submit</button>
+        </div>
+        <div class="importHelp">
+          Accepted examples include <code>Team A 3-5 Team B</code> or <code>Team A 3 5 Team B</code>. Short names and school names from the official PDF are recognised.
+          Knockout games are matched once their participants are known from earlier results.
+        </div>
+        <div id="importPreview" class="importPreview hidden"></div>
+      </div>
+      <div id="allResults"></div>
+    </section>
+    <section class="card">
+      <h2>Progression and placing games</h2>
+      <div class="sub">Participants fill in automatically as group tables settle and earlier knockout results come in. A level score in these games needs the penalty shoot-out score entered underneath.</div>
+      <div id="knockoutResults"></div>
+    </section>
+    <section class="card">
+      <h2>All live group tables</h2>
+      <div id="allTables"></div>
+    </section>
+  </section>
+
+  <section id="simpleView" class="hidden">
+    <section class="card simpleHero">
+      <h2>Simple schedule planner</h2>
+      <div class="sub">Use this if you don't have all the tournament results. Pick the team's final group position, then select win/loss as the knockout games are played. This planner works locally on the device and does not require editor access.</div>
+    </section>
+    <section class="card">
+      <div class="simpleGrid">
+        <div id="simpleTeamWrap">
+          <label for="simpleTeam">Team</label>
+          <select id="simpleTeam"></select>
+        </div>
+        <div>
+          <label for="simplePos">Final group position</label>
+          <select id="simplePos">
+            <option value="">Choose...</option>
+            <option value="1">1st in group</option>
+            <option value="2">2nd in group</option>
+            <option value="3">3rd in group</option>
+            <option value="4">4th in group</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <h3 style="margin-bottom:8px">Group matches</h3>
+        <div id="simplePoolSchedule"></div>
+      </div>
+      <div id="simpleOutput" class="simpleSummary">Choose the final group position to see the knockout route.</div>
+      <div class="simpleNote">This mode uses the published bracket. An actual knockout opponent is only shown when that opponent's group results are complete and the ranking is unambiguous; otherwise the page shows the bracket position, for example “2nd Group C”.</div>
+      <div class="btns noPrint">
+        <button class="action secondary" type="button" onclick="resetSimple()">Reset simple planner</button>
+      </div>
+    </section>
+  </section>
+
+  <section class="card" id="eventsCard">
+    <h2>Programme</h2>
+    <div id="events"></div>
+  </section>
+
+  <section class="card noPrint">
+    <h2>Resources</h2>
+    <div class="btns">
+      <a class="action primary" id="pdfLink" href="#" target="_blank" rel="noopener">Open official PDF</a>
+      <a class="action secondary" href="https://github.com/termark/tournament-companion" target="_blank" rel="noopener">Open GitHub repo</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Tournament notes</h2>
+    <div id="notes"></div>
+  </section>
+
+  <div class="footer" id="footer"></div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
