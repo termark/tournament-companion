@@ -71,6 +71,12 @@ Supabase                   match_results table (fixture_id, score_a, score_b, up
 
 No build step, package manager or framework. Supabase Free provides the shared `match_results` table, editor authentication and row-level security (public read, authenticated write); the page only embeds the publishable key. All tournaments share the one table — every game id is prefixed with the tournament's short id, and a penalty shoot-out is stored as `<game id>_pen`.
 
+## Before each tournament
+
+1. **Restore the Supabase project.** The free tier pauses a project after about a week without traffic, and a paused project refuses every call: no shared results, no editor sign-in. Open the Supabase dashboard, click the project and choose *Restore project* (a few minutes for this database). The page polls every 20 seconds, so it stays awake while parents are using it.
+2. Check **Authentication → Users** in the same dashboard: that is where editor logins live. Create one per person who will enter scores (*Add user → Create new user*, tick *Auto Confirm User*); any authenticated user can write.
+3. Open the live page, sign in, confirm the score fields unlock.
+
 ## Adding the next tournament PDF
 
 1. Copy the official PDF into the repo root (`Something-2026.pdf`).

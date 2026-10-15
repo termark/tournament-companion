@@ -112,6 +112,11 @@ function startSupabase(){
     pollTimer=setInterval(()=>loadSharedScores(false),20000);
   })();
 }
+// A paused Supabase project (free tier, idle for a week) refuses every call with a network-style error.
+function pausedHint(error){
+  const m=(error&&error.message)||String(error);
+  return /failed to fetch|network|load failed|503|540|paused/i.test(m)?m+" — the Supabase project is probably paused; restore it in the Supabase dashboard.":m;
+}
 function setSyncStatus(msg,isError){
   const el=$("syncStatus"); if(!el)return;
   el.textContent=msg+(lastSync&&!isError?" • "+lastSync.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"");
@@ -121,7 +126,7 @@ async function loadSharedScores(showStatus=true){
   if(!sb)return;
   if(showStatus)setSyncStatus("Loading shared results…");
   const {data,error}=await sb.from("match_results").select("fixture_id,score_a,score_b,updated_at");
-  if(error){ setSyncStatus("Could not load shared results; showing cached data. "+error.message,true); return; }
+  if(error){ setSyncStatus("Could not load shared results; showing cached data. "+pausedHint(error),true); return; }
   const fresh={};
   (data||[]).forEach(row=>{ fresh[row.fixture_id]={a:row.score_a==null?"":row.score_a,b:row.score_b==null?"":row.score_b}; });
   scores=fresh; saveLocal(); lastSync=new Date();
@@ -157,7 +162,7 @@ async function doLogin(){
   if(!sb){ msg.textContent="Offline — cannot sign in."; return; }
   msg.textContent="Signing in…";
   const {data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error){ msg.textContent=error.message; return; }
+  if(error){ msg.textContent=pausedHint(error); return; }
   currentUser=data.user; $("authPanel").classList.add("hidden"); msg.textContent=""; updateAuthUI();
 }
 async function doSignOut(){ if(sb) await sb.auth.signOut(); currentUser=null; updateAuthUI(); }
