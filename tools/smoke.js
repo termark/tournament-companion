@@ -50,6 +50,11 @@ async function run(tid){
   ok(T&&T.id===tid,"tournament loaded: "+tid);
   console.log("== "+tid+" — "+d.title);
   ok(d.title===T.pageTitle,"document title set");
+  if(T.logos){
+    ok(!d.getElementById("heroTournamentLogo").classList.contains("hidden")&&d.querySelector("#heroTournamentLogo img"),"tournament logo in the hero");
+    ok(!d.getElementById("heroTeamLogo").classList.contains("hidden")&&d.querySelector("#heroTeamLogo img"),"team logo in the hero");
+    [T.logos.tournament.src,T.logos.team.src,T.logos.team.mark].filter(Boolean).forEach(src=>ok(fs.existsSync(path.join(root,src)),"logo file exists: "+src));
+  }
   ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+4:4),"tabs generated");
   const text=()=>d.body.textContent;
   const click=sel=>{ const el=d.querySelector(sel); ok(!!el,"element exists: "+sel); if(el)el.click(); };
@@ -58,6 +63,7 @@ async function run(tid){
   click('.tab[data-view="T:'+T.tracked[0].key+'"]');
   ok(!d.getElementById("teamView").classList.contains("hidden"),"team view visible");
   ok(d.getElementById("poolSchedule").querySelectorAll(".match").length===3,"3 group matches listed");
+  if(T.logos&&T.logos.team&&T.logos.team.mark) ok(d.querySelector("#poolTable .myRow img.teamMark"),"team crest beside the tracked team in the table");
   ok(/Next game/.test(text()),"next game card shown");
   ok(d.getElementById("entryTable").querySelectorAll("tbody tr").length===4,"entry table has 4 positions");
   if(T.pools){

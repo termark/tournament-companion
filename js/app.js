@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.5.1";
+const PAGE_VERSION="1.6.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -47,6 +47,9 @@ function init(tournament,reg,entry){
   if(!trackedByKey(simple.team)) simple.team=tracked()[0].key;
 
   $("heroTitle").innerHTML=esc(T.heroTitle||tracked()[0].longLabel||tracked()[0].label)+"<br>"+esc(T.name);
+  const L=T.logos||{};
+  if(L.team){ $("heroTeamLogo").innerHTML=`<img src="${esc(L.team.src)}?v=${PAGE_VERSION}" alt="${esc(L.team.alt||"")}">`; $("heroTeamLogo").classList.remove("hidden"); }
+  if(L.tournament){ $("heroTournamentLogo").innerHTML=`<img src="${esc(L.tournament.src)}?v=${PAGE_VERSION}" alt="${esc(L.tournament.alt||"")}">`; $("heroTournamentLogo").classList.remove("hidden"); }
   $("heroSub").textContent=[T.section,T.venue,T.dates].filter(Boolean).join(" • ");
   let meta=`<span class="metaPill">${esc(T.pdfVersion||"Official PDF")}</span><span class="metaPill">Page v${PAGE_VERSION}</span>`;
   if(reg.length>1){
@@ -302,11 +305,15 @@ function teamPoolHTML(t){
     </div>`;
   }).join("");
 }
+function teamMark(team){
+  const L=T.logos&&T.logos.team; if(!L||!L.mark||!tracked().some(t=>t.team===team)) return "";
+  return `<img class="teamMark" src="${esc(L.mark)}?v=${PAGE_VERSION}" alt="">`;
+}
 function tableHTML(group){
   const st=E.standings(T,scores,group);
   const mine=tracked().map(t=>t.team);
   return `<div class="tableWrap"><table class="table"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>`+
-    st.arr.map((x,i)=>`<tr class="${mine.includes(x.team)?"myRow":""}"><td class="rank">${i+1}</td><td><strong>${esc(x.team)}</strong></td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td><strong>${x.pts}</strong></td></tr>`).join("")+
+    st.arr.map((x,i)=>`<tr class="${mine.includes(x.team)?"myRow":""}"><td class="rank">${i+1}</td><td><strong>${teamMark(x.team)}${esc(x.team)}</strong></td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td><strong>${x.pts}</strong></td></tr>`).join("")+
     `</tbody></table></div>`;
 }
 function tableNotes(st){
@@ -435,7 +442,7 @@ function groupMiniHTML(){
     const gs=window.Bracket?window.Bracket.groupStyle(T,grp):{fg:"",bg:""};
     return `<div class="groupMini" style="--gfg:${gs.fg};--gbg:${gs.bg}"><h3><span class="chip">${grp}</span>Group ${grp}</h3>${st.arr.map((x,i)=>{
       const sel=bracketSel&&bracketSel.group===grp&&bracketSel.rank===i+1;
-      return `<div class="gm ${mine.includes(x.team)?"me":""} ${sel?"sel":""}" role="button" tabindex="0" onclick="selectGroupPos('${grp}',${i+1})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroupPos('${grp}',${i+1})}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`;
+      return `<div class="gm ${mine.includes(x.team)?"me":""} ${sel?"sel":""}" role="button" tabindex="0" onclick="selectGroupPos('${grp}',${i+1})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroupPos('${grp}',${i+1})}"><span class="r">${i+1}</span><span>${teamMark(x.team)}${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`;
     }).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
   }).join("");
 }

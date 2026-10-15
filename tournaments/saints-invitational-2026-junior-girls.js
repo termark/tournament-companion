@@ -46,6 +46,10 @@ window.TOURNAMENT={
   },
   pdfVersion:"Release version 15 October 2026",
   pageTitle:"Herschel – Saints Invitational 2026",
+  logos:{
+    tournament:{src:"assets/saints-invitational-logo.png",alt:"Saints Water Polo Invitational",onLight:true},
+    team:{src:"assets/herschel-icon-white.svg",alt:"Herschel Girls' School",mark:"assets/herschel-icon.svg"}
+  },
   heroTitle:"Herschel Girls' Prep",
   arriveMinutes:30,
   // Side a / side b of every game in the fixtures list = blue caps / white caps

@@ -19,6 +19,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,
 .hero{background:linear-gradient(135deg,var(--blue2),var(--blue));color:white;border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
 .hero h1{margin:0 0 5px;font-size:clamp(1.7rem,7vw,2.35rem);line-height:1.08}
 .hero p{margin:0;color:#dbe7ff}
+.heroTop{display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+.heroText{min-width:0;flex:1 1 auto}
+.heroTeamLogo{height:58px;margin-bottom:10px}
+.heroTeamLogo img{height:100%;width:auto;display:block}
+.heroTournamentLogo{flex:0 0 auto;background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.heroTournamentLogo img{height:96px;width:auto;display:block}
+.teamMark{height:1em;width:auto;vertical-align:-0.15em;margin-right:5px}
+@media(max-width:560px){.heroTournamentLogo img{height:72px}.heroTournamentLogo{padding:6px 8px}}
 .heroMeta{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .metaPill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.13);font-size:.78rem}
 .hero select{width:auto;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.13);color:#fff;font-size:.8rem}
@@ -160,15 +168,21 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.5.1"></script>
-<script src="js/bracket.js?v=1.5.1"></script>
-<script src="tournaments/registry.js?v=1.5.1"></script>
+<script src="js/engine.js?v=1.6.0"></script>
+<script src="js/bracket.js?v=1.6.0"></script>
+<script src="tournaments/registry.js?v=1.6.0"></script>
 </head>
 <body>
 <div class="wrap">
   <section class="hero">
-    <h1 id="heroTitle">Loading…</h1>
-    <p id="heroSub"></p>
+    <div class="heroTop">
+      <div class="heroText">
+        <div id="heroTeamLogo" class="heroTeamLogo hidden"></div>
+        <h1 id="heroTitle">Loading…</h1>
+        <p id="heroSub"></p>
+      </div>
+      <div id="heroTournamentLogo" class="heroTournamentLogo hidden"></div>
+    </div>
     <div class="heroMeta" id="heroMeta"></div>
     <div class="authbar noPrint">
       <span id="authState" class="authstate">Connecting…</span>
@@ -357,6 +371,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.5.1"></script>
+<script src="js/app.js?v=1.6.0"></script>
 </body>
 </html>
