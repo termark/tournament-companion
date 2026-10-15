@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.4.1";
+const PAGE_VERSION="1.5.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -94,6 +94,8 @@ function init(tournament,reg,entry){
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
   $("footer").innerHTML=`termark/tournament-companion • ${esc(T.name)} • page v${PAGE_VERSION}<br>Static GitHub Pages app • shared results via Supabase, cached in this browser`;
 
+  $("feedFetch").addEventListener("click",feedFetch);
+  $("feedManualToggle").addEventListener("click",()=>{ $("feedManual").classList.toggle("hidden"); });
   $("feedInput").addEventListener("input",feedPreview);
   $("feedInput").addEventListener("paste",()=>setTimeout(feedPreview,0));
   $("feedSubmit").addEventListener("click",feedSubmit);
@@ -491,6 +493,24 @@ function renderBracket(){
 
 /* ---------- update from the official results feed (any visitor) ---------- */
 let feedDraft=[];
+// One tap: the fetch-results Edge Function reads the results page server-side with the same parser.
+async function feedFetch(){
+  const btn=$("feedFetch"), st=$("feedFetchStatus");
+  btn.disabled=true; st.style.color="var(--muted)"; st.textContent="Reading "+((T.external&&T.external.name)||"the results page")+"…";
+  try{
+    const res=await fetch(SUPABASE_URL+"/functions/v1/fetch-results",{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({tournament:T.id})});
+    const body=await res.json().catch(()=>({}));
+    if(!res.ok||!body.ok) throw new Error(body.error||("HTTP "+res.status));
+    await loadSharedScores(false);
+    const when=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    st.textContent=body.found===0?`No results published yet (${when}).`:`${body.found} result${body.found===1?"":"s"} on ${(T.external&&T.external.name)||"the feed"}, ${body.written} new or changed written (${when}).`;
+    setSyncStatus(st.textContent);
+  }catch(e){
+    st.style.color="var(--red)";
+    st.textContent="Automatic update failed ("+(e.message||e)+"). Use “Paste instead” below.";
+    $("feedManual").classList.remove("hidden");
+  }finally{ btn.disabled=false; }
+}
 function feedPreview(){
   const text=$("feedInput").value;
   const box=$("feedPreview");

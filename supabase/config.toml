@@ -1,0 +1,3 @@
+# Supabase CLI config for this repo. Only the Edge Function settings matter here.
+[functions.fetch-results]
+verify_jwt = false

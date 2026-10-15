@@ -37,9 +37,19 @@ Progression and placing games cannot end in a draw — the tournament goes to a 
 
 ### Update from MyComLink (anyone, no sign-in)
 
-The Results tab opens with an **Update from MyComLink** box. Any parent can: tap *Open MyComLink results* → on that page *Select all* and *Copy* → come back and paste. The page shows what it found (new / changes / already in) and *Update shared results* writes it for everyone. Only rows copied verbatim from the results page are accepted there; hand-typed lines are ignored, so a public update can never invent a score — editors still have Quick import for corrections.
+The Results tab opens with an **Update from MyComLink** box and one button: **Update now from MyComLink**. It calls the `fetch-results` Edge Function, which reads the organiser's results page once, parses it with the same parser as the page (it loads `js/engine.js` and the data file from the live site, so there is one parser to maintain) and writes new or changed scores. One fetch per tap, no schedule.
 
-This needs anonymous writes enabled once in Supabase: run `supabase/public-results-updates.sql` in the dashboard's SQL Editor. Until then the box explains that public updates are not switched on and points to the editor route.
+If the function is unavailable, **Paste instead…** opens the manual route: open the results page, *Select all*, *Copy*, paste. Only rows copied verbatim from the results page are accepted there; hand-typed lines are ignored, so a public update can never invent a score. Editors still have Quick import for corrections.
+
+Setup, once per project:
+
+1. `supabase/public-results-updates.sql` in the dashboard's SQL Editor (grants + policies for anonymous paste updates).
+2. The function, with the Supabase CLI logged in to the project:
+   ```bash
+   supabase link --project-ref jjqtyytnegfqqdnrunir
+   supabase functions deploy fetch-results --no-verify-jwt
+   ```
+   It needs no secrets; it uses the project's own service-role key, which is injected automatically. `tools/test-fetch-results.js` checks the function's parsing offline.
 
 ### Results from MyComLink
 
@@ -115,6 +125,7 @@ node tools/validate.js mackenzie-cup-2026   # one tournament
 
 npm i --no-save jsdom                        # once, for the UI smoke test
 node tools/smoke.js                          # drives every view with a stubbed Supabase
+node tools/test-fetch-results.js             # the Edge Function's parsing, offline
 ```
 
 `tools/validate.js` also carries a second, hand-transcribed copy of Herschel's routes from each PDF and checks the data file against it for every win/loss sequence from every group position.
@@ -136,7 +147,9 @@ tournament-companion/
 │   ├── validate.js
 │   └── smoke.js
 ├── supabase/
-│   └── public-results-updates.sql   one-off: let visitors write pasted results
+│   ├── public-results-updates.sql   one-off: let visitors write pasted results
+│   ├── config.toml
+│   └── functions/fetch-results/     Edge Function: one-tap read of the organiser's results page
 ├── Saints-Invitational-2026-Junior-Girls.pdf
 ├── Mackenzie-Cup-2026.pdf
 └── README.md
@@ -144,7 +157,7 @@ tournament-companion/
 
 ## Current version
 
-**Page version: 1.4.0** (multi-tournament engine, bracket view, public results updates). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
+**Page version: 1.5.0** (multi-tournament engine, bracket view, one-tap results from the organiser's feed). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
 
 ## Notes
 

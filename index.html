@@ -160,9 +160,9 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.4.1"></script>
-<script src="js/bracket.js?v=1.4.1"></script>
-<script src="tournaments/registry.js?v=1.4.1"></script>
+<script src="js/engine.js?v=1.5.0"></script>
+<script src="js/bracket.js?v=1.5.0"></script>
+<script src="tournaments/registry.js?v=1.5.0"></script>
 </head>
 <body>
 <div class="wrap">
@@ -253,6 +253,12 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
       <div id="feedBox" class="bulkBox feedBox noPrint hidden">
         <strong id="feedTitle">Update from MyComLink</strong>
         <div class="sub">Anyone can do this, no sign-in needed. Scores on the official results page are read exactly as published; only games this page knows are written.</div>
+        <div class="btns" id="feedAutoBtns">
+          <button id="feedFetch" class="action primary" type="button">Update now from MyComLink</button>
+          <button id="feedManualToggle" class="action secondary" type="button">Paste instead…</button>
+        </div>
+        <div id="feedFetchStatus" class="syncLine"></div>
+        <div id="feedManual" class="hidden">
         <ol class="steps">
           <li><a id="feedOpen" class="action primary" href="#" target="_blank" rel="noopener">1. Open MyComLink results ↗</a></li>
           <li>2. On that page: <b>Select all</b> and <b>Copy</b> <span class="sub" style="display:inline">(long-press the page → Select all → Copy)</span></li>
@@ -264,6 +270,7 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
           <button id="feedClear" class="action secondary" type="button">Clear</button>
         </div>
         <div id="feedPreview" class="importPreview hidden"></div>
+        </div>
       </div>
 
       <div class="bulkBox noPrint">
@@ -350,6 +357,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.4.1"></script>
+<script src="js/app.js?v=1.5.0"></script>
 </body>
 </html>

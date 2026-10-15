@@ -154,6 +154,22 @@ async function run(tid){
   click('.tab[data-view="RESULTS"]');
   ok(d.querySelectorAll("#allResults input:not(:disabled)").length===0,"inputs disabled after sign out");
 
+  // one-tap update: the page calls the fetch-results function; stub fetch() to answer like it
+  if(T.external&&T.external.results){
+    const calls=[]; const realFetch=w.fetch;
+    w.fetch=async(url,opts)=>{ calls.push({url,opts}); return {ok:true,status:200,json:async()=>({ok:true,found:3,written:2,changed:0,unchanged:1})}; };
+    click("#feedFetch"); await new Promise(r=>setTimeout(r,120));
+    ok(calls.length===1&&/functions\/v1\/fetch-results$/.test(calls[0].url),"one-tap update calls the fetch-results function");
+    ok(calls[0].opts&&JSON.parse(calls[0].opts.body).tournament===T.id,"function is asked for the active tournament");
+    ok(/3 results on MyComLink, 2 new or changed written/.test(d.getElementById("feedFetchStatus").textContent),"status reports found/written");
+    ok(d.getElementById("feedManual").classList.contains("hidden"),"paste box stays hidden after a successful fetch");
+    w.fetch=async()=>({ok:false,status:502,json:async()=>({ok:false,error:"results page HTTP 403"})});
+    click("#feedFetch"); await new Promise(r=>setTimeout(r,120));
+    ok(/Automatic update failed \(results page HTTP 403\)/.test(d.getElementById("feedFetchStatus").textContent),"failure is explained");
+    ok(!d.getElementById("feedManual").classList.contains("hidden"),"paste box opens as the fallback");
+    w.fetch=realFetch;
+  }
+
   // public "Update from MyComLink": signed out, paste a copied results page, submit
   if(T.external&&T.external.results){
     ok(!d.getElementById("feedBox").classList.contains("hidden"),"feed box shown for a tournament with a results feed");
