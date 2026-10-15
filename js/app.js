@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.3.1";
+const PAGE_VERSION="1.4.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -79,6 +79,7 @@ function init(tournament,reg,entry){
     add(x.results,(x.name||"Official")+" results"); add(x.teamFixtures||x.fixtures,(x.name||"Official")+" fixtures");
     if(T.venueMap) add(mapsUrl(T.venueMap.lat,T.venueMap.lng,T.venueMap.label),"Venue in Google Maps");
     else add(x.venue,"Venue");
+    if(x.results){ $("feedBox").classList.remove("hidden"); $("feedOpen").href=x.results; $("feedTitle").textContent="Update from "+(x.name||"the official results"); }
     const help=$("importHelpExt"); if(help) help.innerHTML=`Fastest route: open <a href="${esc(x.results)}" target="_blank" rel="noopener">${esc(x.name)} results</a>, select the whole page, copy, paste it here. Rows like <code>Herschel 13A 9 - 15 St Mary's Waverley 13A</code> are recognised; everything else on the page is ignored.`;
   }
   if(T.pools){
@@ -92,6 +93,10 @@ function init(tournament,reg,entry){
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
   $("footer").innerHTML=`termark/tournament-companion • ${esc(T.name)} • page v${PAGE_VERSION}<br>Static GitHub Pages app • shared results via Supabase, cached in this browser`;
 
+  $("feedInput").addEventListener("input",feedPreview);
+  $("feedInput").addEventListener("paste",()=>setTimeout(feedPreview,0));
+  $("feedSubmit").addEventListener("click",feedSubmit);
+  $("feedClear").addEventListener("click",()=>{ $("feedInput").value=""; feedDraft=[]; $("feedPreview").classList.add("hidden"); });
   $("previewImport").addEventListener("click",previewBulk);
   $("applyImport").addEventListener("click",applyBulk);
   $("authButton").addEventListener("click",()=>$("authPanel").classList.remove("hidden"));
@@ -483,7 +488,57 @@ function renderBracket(){
   applyBracketSelection();
 }
 
-/* ---------- bulk import ---------- */
+/* ---------- update from the official results feed (any visitor) ---------- */
+let feedDraft=[];
+function feedPreview(){
+  const text=$("feedInput").value;
+  const box=$("feedPreview");
+  if(!text.trim()){ box.classList.add("hidden"); feedDraft=[]; return; }
+  const p=E.parseBulk(T,scores,text);
+  const rows=p.out.filter(x=>x.feedRow);          // only verbatim feed rows may be written without sign-in
+  const skipped=p.out.length-rows.length;
+  feedDraft=rows.map(x=>{
+    const ex=E.scoreOf(scores,x.game.id);
+    const same=ex.a===x.scoreA&&ex.b===x.scoreB;
+    const changed=(ex.a!=null||ex.b!=null)&&!same;
+    return {game:x.game,scoreA:x.scoreA,scoreB:x.scoreB,existingA:ex.a,existingB:ex.b,same,changed};
+  });
+  box.classList.remove("hidden");
+  if(!feedDraft.length){
+    box.innerHTML=`<strong>No results recognised in the pasted text.</strong><div class="previewError">Make sure the whole MyComLink results page was copied (Select all → Copy). Lines seen: ${text.split(/\n/).filter(l=>l.trim()).length}.</div>`;
+    return;
+  }
+  const fresh=feedDraft.filter(d=>!d.same);
+  const list=feedDraft.map(d=>{
+    const p=E.participants(T,scores,d.game);
+    const tag=d.same?`<span class="badge soft">already in</span>`:d.changed?`<span class="badge" style="background:#fff8db;color:#8a5a00">changes ${d.existingA}–${d.existingB}</span>`:`<span class="badge" style="background:#dcfce7;color:#166534">new</span>`;
+    return `<div class="fixtureEntry"><div class="fixtureTeams">${esc(p.a.team||p.a.current)} <b>${d.scoreA}–${d.scoreB}</b> ${esc(p.b.team||p.b.current)} ${tag}</div><div class="meta">${esc(d.game.stage==="group"?"Group "+d.game.group:d.game.label)} • ${esc(day(d.game))} ${esc(d.game.time)}</div></div>`;
+  }).join("");
+  box.innerHTML=`<div class="previewOk">${feedDraft.length} result${feedDraft.length===1?"":"s"} found, ${fresh.length} to write</div>${list}`+
+    (skipped?`<div class="previewSkipped">${skipped} hand-typed line${skipped===1?"":"s"} ignored — this box only takes rows copied from the results page. Editors can use Quick import below for anything else.</div>`:"")+
+    (p.errors.length&&!feedDraft.length?`<div class="previewError">${p.errors.map(esc).join("<br>")}</div>`:"");
+}
+async function feedSubmit(){
+  if(!feedDraft.length) feedPreview();
+  const fresh=feedDraft.filter(d=>!d.same);
+  if(!fresh.length){ setSyncStatus(feedDraft.length?"Shared results already match the pasted page.":"Nothing to write.",!feedDraft.length); return; }
+  const rows=fresh.map(d=>({fixture_id:d.game.id,score_a:Number(d.scoreA),score_b:Number(d.scoreB),updated_at:new Date().toISOString()}));
+  $("feedSubmit").disabled=true;
+  const {error}=await upsertRows(rows);
+  $("feedSubmit").disabled=false;
+  if(error){
+    const msg=/row-level security|permission|policy|401|403/i.test(error.message)?"Public updates are not switched on yet (Supabase policy). An editor can sign in and use Quick import instead.":error.message;
+    setSyncStatus("Update failed: "+msg,true); $("feedPreview").insertAdjacentHTML("beforeend",`<div class="previewError">${esc(msg)}</div>`); return;
+  }
+  rows.forEach(r=>scores[r.fixture_id]={a:r.score_a,b:r.score_b});
+  saveLocal(); lastSync=new Date();
+  $("feedInput").value=""; feedDraft=[]; $("feedPreview").classList.add("hidden");
+  render();
+  await loadSharedScores(false);
+  setSyncStatus(`Updated ${rows.length} result${rows.length===1?"":"s"} from ${(T.external&&T.external.name)||"the results page"} — thank you`);
+}
+
+/* ---------- bulk import (editors) ---------- */
 function buildImportDraft(){
   const p=E.parseBulk(T,scores,$("bulkInput").value);
   importDraft=p.out.map((x,i)=>{

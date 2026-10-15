@@ -35,6 +35,12 @@ Public visitors are read-only for the shared results. To update scores:
 
 Progression and placing games cannot end in a draw — the tournament goes to a penalty shoot-out. Enter the full-time score as normal; the page then shows a second **shoot-out** row for the penalty score, and uses it to decide the winner and advance the bracket.
 
+### Update from MyComLink (anyone, no sign-in)
+
+The Results tab opens with an **Update from MyComLink** box. Any parent can: tap *Open MyComLink results* → on that page *Select all* and *Copy* → come back and paste. The page shows what it found (new / changes / already in) and *Update shared results* writes it for everyone. Only rows copied verbatim from the results page are accepted there; hand-typed lines are ignored, so a public update can never invent a score — editors still have Quick import for corrections.
+
+This needs anonymous writes enabled once in Supabase: run `supabase/public-results-updates.sql` in the dashboard's SQL Editor. Until then the box explains that public updates are not switched on and points to the editor route.
+
 ### Results from MyComLink
 
 The organisers publish this tournament on MyComLink (event 12099): [fixtures](https://www.mycomlink.co.za/fixture_list.php?eid=12099&dlim=~), [results](https://www.mycomlink.co.za/result_list.php?eid=12099&dlim=~), [Herschel's games](https://www.mycomlink.co.za/fixture_list.php?eid=12099&org=261&agrp=34&dlim=~). Every game on the page links to its MyComLink fixture page (`fixture.php?i=83377 + game number`, verified for all 52), and the Resources card links the event's results and the venue.
@@ -129,6 +135,8 @@ tournament-companion/
 ├── tools/
 │   ├── validate.js
 │   └── smoke.js
+├── supabase/
+│   └── public-results-updates.sql   one-off: let visitors write pasted results
 ├── Saints-Invitational-2026-Junior-Girls.pdf
 ├── Mackenzie-Cup-2026.pdf
 └── README.md
@@ -136,7 +144,7 @@ tournament-companion/
 
 ## Current version
 
-**Page version: 1.1.0** (multi-tournament engine + bracket view). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
+**Page version: 1.4.0** (multi-tournament engine, bracket view, public results updates). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
 
 ## Notes
 

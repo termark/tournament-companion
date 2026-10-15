@@ -256,7 +256,9 @@ E.parseBulk=function(T,scores,text){
     if(!g){ errors.push("Line "+(idx+1)+": no fixture (yet) between "+lt+" and "+rt); return; }
     const p=E.participants(T,scores,g);
     const leftIsA=(p.a.team||p.a.current)===lt;
-    out.push({game:g,scoreA:leftIsA?sa:sb,scoreB:leftIsA?sb:sa,source:line});
+    // A verbatim results-feed row is tab-separated "Team<sfx> <tab> n <tab> - <tab> n <tab> Team<sfx>" (MyComLink's shape).
+    const feedRow=/^[^\t]+\t+(\d+|win|forfeit)\t+-\t+(\d+|win|forfeit)\t+[^\t]+$/i.test(line);
+    out.push({game:g,scoreA:leftIsA?sa:sb,scoreB:leftIsA?sb:sa,source:line,feedRow});
   });
   return {out,errors};
 };

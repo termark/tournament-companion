@@ -153,6 +153,45 @@ async function run(tid){
   click("#signOutButton"); await new Promise(r=>setTimeout(r,50));
   click('.tab[data-view="RESULTS"]');
   ok(d.querySelectorAll("#allResults input:not(:disabled)").length===0,"inputs disabled after sign out");
+
+  // public "Update from MyComLink": signed out, paste a copied results page, submit
+  if(T.external&&T.external.results){
+    ok(!d.getElementById("feedBox").classList.contains("hidden"),"feed box shown for a tournament with a results feed");
+    ok(d.getElementById("feedOpen").href===T.external.results,"feed button opens the official results page");
+    // wipe the fake table so the writes are visible
+    Object.keys(w.supabase._api._table).forEach(k=>delete w.supabase._api._table[k]);
+    await w.loadSharedScores(false); await new Promise(r=>setTimeout(r,30));
+    const g1=E.groupGames(T,"A")[0], g2=E.groupGames(T,"B")[0];
+    const sfx=T.external.suffix||"";
+    const page=["Team Sport Results","Criteria: x","Fri, 16-Oct-2026 :: Water Polo","",
+      "08:50\tGroup A :: Saints Polo Pool\t\t\tdetails",`${g1.a.team}${sfx}\t7\t-\t2\t${g1.b.team}${sfx}`,"",
+      "09:30\tGroup B :: Saints Olympic South\t\t\tdetails",`${g2.b.team}${sfx}\t1\t-\t1\t${g2.a.team}${sfx}`,"",
+      `${g2.a.team} 9-9 ${g2.b.team}`, // a hand-typed line: must be ignored here
+      "Home About Results"].join("\n");
+    d.getElementById("feedInput").value=page; d.getElementById("feedInput").dispatchEvent(new w.Event("input"));
+    ok(/2 results found, 2 to write/.test(d.getElementById("feedPreview").textContent),"feed preview counts the two copied rows");
+    ok(/1 hand-typed line/.test(d.getElementById("feedPreview").textContent),"feed preview reports the ignored hand-typed line");
+    click("#feedSubmit"); await new Promise(r=>setTimeout(r,120));
+    const t1=w.supabase._api._table[g1.id], t2=w.supabase._api._table[g2.id];
+    ok(t1&&t1.score_a===7&&t1.score_b===2,"feed submit wrote the first row while signed out");
+    ok(t2&&t2.score_a===1&&t2.score_b===1,"feed submit wrote the reversed row oriented to the fixture");
+    ok(/Updated 2 results/.test(d.getElementById("syncStatus").textContent),"status confirms the update");
+    // paste the same page again → nothing to write
+    d.getElementById("feedInput").value=page; d.getElementById("feedInput").dispatchEvent(new w.Event("input"));
+    ok(/2 results found, 0 to write/.test(d.getElementById("feedPreview").textContent),"second paste of the same page writes nothing");
+    // a changed score on the feed is flagged and written
+    const page2=page.replace(`\t7\t-\t2\t`,`\t8\t-\t2\t`);
+    d.getElementById("feedInput").value=page2; d.getElementById("feedInput").dispatchEvent(new w.Event("input"));
+    ok(/changes 7–2/.test(d.getElementById("feedPreview").textContent),"a corrected feed score is shown as a change");
+    click("#feedSubmit"); await new Promise(r=>setTimeout(r,120));
+    ok(w.supabase._api._table[g1.id].score_a===8,"corrected score written");
+    // RLS refusal is explained
+    const realUpsert=w.supabase._api.from().upsert;
+    w.supabase._api.from=()=>({select:async()=>({data:Object.values(w.supabase._api._table),error:null}),upsert:async()=>({error:{message:"new row violates row-level security policy"}})});
+    d.getElementById("feedInput").value=page; d.getElementById("feedInput").dispatchEvent(new w.Event("input"));
+    click("#feedSubmit"); await new Promise(r=>setTimeout(r,120));
+    ok(/Public updates are not switched on yet/.test(d.getElementById("syncStatus").textContent),"RLS refusal explained in plain words");
+  }
   ok(errors.length===0,"still no script errors");
   w.close();
 }

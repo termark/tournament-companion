@@ -211,6 +211,10 @@ function mycomlink(T){
   ok(by[1]&&by[1].scoreA===1&&by[1].scoreB===0,"mycomlink: G1 forfeit → 1-0 to Stingray");
   ok(by[7]&&by[7].scoreA===3&&by[7].scoreB===7,"mycomlink: G7 Chelsea 3-7 Reddam");
   ok(by[3]&&by[3].scoreA===5&&by[3].scoreB===1,"mycomlink: G3 Wynberg 5-1 Falcon");
+  ok(p.out.every(x=>x.feedRow),"mycomlink: every copied row is tagged as a feed row");
+  const hand=E.parseBulk(T,{},"Herschel 5-3 St Dominic's\nKingsmead 2 2 Roedean");
+  eq(hand.out.length,2,"hand-typed lines still parse for editors");
+  ok(hand.out.every(x=>!x.feedRow),"hand-typed lines are not tagged as feed rows");
   // every team name mycomlink uses maps to one of ours
   const names=["Stingray Academy","Durban Girls'","Umhlali Ballito","Roedean","Wynberg Girls'","Falcon College","Herschel","St Mary's Waverley","St. Mary's DSG","Chisipite","Kingsmead","Hellenic Academy","Chelsea","Reddam Bedfordview","Our Lady of Fatima","St Dominic's"];
   const aliases=E.aliasMap(T);
