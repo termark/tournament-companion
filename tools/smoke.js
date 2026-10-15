@@ -50,7 +50,7 @@ async function run(tid){
   ok(T&&T.id===tid,"tournament loaded: "+tid);
   console.log("== "+tid+" — "+d.title);
   ok(d.title===T.pageTitle,"document title set");
-  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+3:3),"tabs generated");
+  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+4:4),"tabs generated");
   const text=()=>d.body.textContent;
   const click=sel=>{ const el=d.querySelector(sel); ok(!!el,"element exists: "+sel); if(el)el.click(); };
 
@@ -108,6 +108,14 @@ async function run(tid){
   await w.loadSharedScores(false); await new Promise(r=>setTimeout(r,50));
   ok(/pens 4–2|pens 2–4/.test(d.getElementById("knockoutOutput").textContent),"shoot-out result rendered");
   ok(/Final placing/.test(d.getElementById("knockoutOutput").textContent),"bracket advanced past the shoot-out");
+
+  // bracket view: every knockout game drawn, my path highlighted, group minis present
+  click('.tab[data-view="BRACKET"]');
+  ok(!d.getElementById("bracketView").classList.contains("hidden"),"bracket view visible");
+  ok(d.querySelectorAll("#bracketView [data-game]").length===E.knockoutGames(T).length,"bracket draws every knockout game");
+  ok(d.querySelectorAll("#bracketView .bk-mine").length>0,"bracket highlights the tracked team's path");
+  ok(d.querySelectorAll("#bracketGroups .groupMini").length===Object.keys(T.groups).length,"group panels rendered");
+  ok(d.querySelector("#bracketMain svg"),"championship svg present");
 
   // simple planner
   click('.tab[data-view="SIMPLE"]');

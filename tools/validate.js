@@ -12,9 +12,12 @@
 const fs=require("fs"), path=require("path"), vm=require("vm");
 const root=path.resolve(__dirname,"..");
 const E=require(path.join(root,"js","engine.js"));
+const B=require(path.join(root,"js","bracket.js"));
 
 function loadWindowScript(file){ const window={}; vm.runInNewContext(fs.readFileSync(path.join(root,file),"utf8"),{window}); return window; }
 const registry=loadWindowScript("tournaments/registry.js").TOURNAMENT_REGISTRY;
+// every data file is validated, listed in the registry or not (unlisted ones are regression cases)
+const dataFiles=fs.readdirSync(path.join(root,"tournaments")).filter(f=>f.endsWith(".js")&&f!=="registry.js").map(f=>"tournaments/"+f);
 
 let failures=0, checks=0;
 function ok(cond,msg){ checks++; if(!cond){ failures++; console.log("  FAIL: "+msg); } }
@@ -267,13 +270,37 @@ function expectMackenzie(T){
   ok(E.gameById(T,"A_2026-09-11_1600")&&E.gameById(T,"D_2026-09-12_0800"),"Mackenzie: original Supabase fixture ids preserved");
 }
 
+/* ---------- brackets ---------- */
+function brackets(T){
+  const kos=E.knockoutGames(T);
+  const champ=B.championship(T);
+  ok(!!champ,"a final is defined");
+  [{},simulate(T,7,false)].forEach((scores,i)=>{
+    const all=B.all(T,scores,{team:T.tracked[0].team});
+    const svg=all.map(x=>x.svg).join("");
+    ok(all.length>0&&all[0].final,"brackets render ("+(i?"full":"empty")+")");
+    kos.forEach(g=>ok(svg.includes('data-game="'+g.id+'"'),"G#"+g.n+" appears in a bracket ("+(i?"full":"empty")+")"));
+    const ids=svg.match(/data-game="[^"]+"/g)||[];
+    eq(ids.length,kos.length,"every knockout game drawn exactly once ("+(i?"full":"empty")+")");
+    all.forEach(x=>{ const m=x.svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/); ok(m&&Number(m[1])>0&&Number(m[2])>0,x.title+": positive viewBox"); });
+  });
+  // a played final shows the winner on the row of the team that won
+  const scores=simulate(T,11,true);
+  const svg=B.championshipSVG(T,scores,{});
+  const r=E.result(T,scores,champ), p=E.participants(T,scores,champ);
+  const winner=r.winner==="a"?p.a.team:p.b.team;
+  ok(new RegExp('class="bk-row[^"]*won[^"]*"[^>]*>'+winner.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").slice(0,21)).test(svg),"final: winner row marked won");
+}
+
 /* ---------- run ---------- */
 const only=process.argv[2];
-registry.filter(r=>!only||r.id===only).forEach(r=>{
-  const T=loadWindowScript(r.file).TOURNAMENT;
-  console.log("== "+r.id+" ("+T.games.length+" games, "+E.allTeams(T).length+" teams)");
+dataFiles.forEach(file=>{
+  const T=loadWindowScript(file).TOURNAMENT;
+  if(only&&T.id!==only)return;
+  const listed=registry.some(r=>r.id===T.id);
+  console.log("== "+T.id+" ("+T.games.length+" games, "+E.allTeams(T).length+" teams"+(listed?"":", not in registry")+")");
   const before=failures;
-  structural(T); simulation(T); bulk(T); tiebreak(T);
+  structural(T); simulation(T); bulk(T); tiebreak(T); brackets(T);
   if(T.id==="saints-invitational-2026-junior-girls") expectSaints(T);
   if(T.id==="mackenzie-cup-2026") expectMackenzie(T);
   console.log("  "+(failures===before?"OK":"FAILED")+" — "+checks+" checks so far");

@@ -7,12 +7,12 @@ It started as a one-off single-file page for the 2026 Mackenzie Cup ([termark/ma
 | Tournament | Dates | Data file | Official PDF |
 |---|---|---|---|
 | **Saints Invitational 2026 – Junior Girls** (default) | 16–18 Oct 2026, St Stithians College, Sandton | `tournaments/saints-invitational-2026-junior-girls.js` | `Saints-Invitational-2026-Junior-Girls.pdf` |
-| Mackenzie Cup 2026 – U13 Girls | 11–13 Sep 2026, Reddam House Constantia | `tournaments/mackenzie-cup-2026.js` | `Mackenzie-Cup-2026.pdf` |
+| Mackenzie Cup 2026 – U13 Girls (not shown; kept as a regression case for the validator) | 11–13 Sep 2026, Reddam House Constantia | `tournaments/mackenzie-cup-2026.js` | `Mackenzie-Cup-2026.pdf` |
 
 ## Live site
 
 - https://termark.github.io/tournament-companion/ — current tournament (first entry in `tournaments/registry.js`)
-- https://termark.github.io/tournament-companion/?t=mackenzie-cup-2026 — any other tournament by id (there is also a switcher in the page header)
+- `?t=<id>` selects any other tournament listed in the registry (a switcher appears in the page header when there is more than one)
 - https://termark.github.io/mackenzie-cup-2026/ — the original single-file Mackenzie Cup page, in its own repo, unchanged
 
 ## How to use
@@ -20,6 +20,7 @@ It started as a one-off single-file page for the 2026 Mackenzie Cup ([termark/ma
 Open the live site on any phone or computer. Tabs:
 
 - **Herschel** (one tab per tracked team) – group games, live group standings, and the knockout route. While group games are still being played the route is a projection from the current table; once the group is complete and the tie-break is unambiguous it is marked **Confirmed**. Each knockout game shows the opponent as a team name when it is known, or as the bracket placeholder (for example *Winner of G#27 — Cross-over play-off 3: 3rd Group A vs 2nd Group B*) when it is not. After the next unplayed game the page shows the **If WIN / If LOSS** follow-ups with day, time and pool.
+- **Bracket** – wall-chart view: the four group panels, the championship bracket drawn World-Cup style (final in the middle, bronze game underneath) and a tree for every placing bracket. Drawn from the data file, so it is right for any tournament the validator accepts; teams fill in as results come in and the tracked team's path is highlighted. Scrolls sideways on a phone.
 - **All Herschel** (only when more than one team is tracked) – combined timeline.
 - **Results** – every game in the tournament with score entry, a bulk importer, and all live group tables. Knockout games fill in their participants automatically as the group tables settle and earlier knockout results come in.
 - **Simple** – offline planner: pick the final group position, then select Win/Loss after each knockout game to reveal the next one. Stored locally in the browser; needs no sign-in.
@@ -62,8 +63,9 @@ GitHub Pages
     ↓
 index.html                 markup + CSS
 js/engine.js               standings, slot resolution, bracket walk, bulk parser (no DOM; also runs in Node)
+js/bracket.js              draws the championship and placing brackets as SVG from the data (no DOM)
 js/app.js                  rendering, Supabase sync, editor sign-in, local cache
-tournaments/registry.js    which tournaments exist; first one is the default
+tournaments/registry.js    which tournaments the page shows; first one is the default (unlisted data files stay as validator regression cases)
 tournaments/<id>.js        one data file per tournament (groups, games, bracket, rules text)
     ↓
 Supabase                   match_results table (fixture_id, score_a, score_b, updated_at)
@@ -110,6 +112,7 @@ tournament-companion/
 ├── index.html
 ├── js/
 │   ├── engine.js
+│   ├── bracket.js
 │   └── app.js
 ├── tournaments/
 │   ├── registry.js
@@ -125,7 +128,7 @@ tournament-companion/
 
 ## Current version
 
-**Page version: 1.0.0** (multi-tournament engine). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
+**Page version: 1.1.0** (multi-tournament engine + bracket view). The original Mackenzie Cup page (0.8.5) lives on in [termark/mackenzie-cup-2026](https://github.com/termark/mackenzie-cup-2026).
 
 ## Notes
 

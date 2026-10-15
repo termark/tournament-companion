@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.0.0";
+const PAGE_VERSION="1.1.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -58,10 +58,10 @@ function init(tournament,reg,entry){
   // tabs
   let tabs=tracked().map(t=>`<button class="tab" data-view="T:${esc(t.key)}">${esc(t.label)}</button>`);
   if(tracked().length>1) tabs.push(`<button class="tab" data-view="ALL">All ${esc(commonLabel())}</button>`);
-  tabs.push(`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
+  tabs.push(`<button class="tab" data-view="BRACKET">Bracket</button>`,`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
   $("tabs").innerHTML=tabs.join("");
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
-  const validViews=[...tracked().map(t=>"T:"+t.key),"RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
+  const validViews=[...tracked().map(t=>"T:"+t.key),"BRACKET","RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
   if(!validViews.includes(view)) view="T:"+tracked()[0].key;
 
   // simple planner team picker
@@ -71,6 +71,7 @@ function init(tournament,reg,entry){
   $("simplePos").addEventListener("change",e=>{simple.pos=e.target.value;simple.assume={};saveLocal();renderSimple()});
 
   // static cards
+  if(window.Bracket&&!$("bracketCss")){ const st=document.createElement("style"); st.id="bracketCss"; st.textContent=window.Bracket.css; document.head.appendChild(st); }
   $("pdfLink").href=T.pdf;
   $("events").innerHTML=(T.events||[]).map(ev=>`<div class="match"><div class="day">${esc(E.dayLabel(T,ev.date))}</div><div class="time">${esc(ev.time)}</div><div><strong>${esc(ev.label)}</strong>${ev.detail?`<div class="meta">${esc(ev.detail)}</div>`:""}</div></div>`).join("")||"<div class='sub'>No programme items.</div>";
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
@@ -391,6 +392,30 @@ function allTablesHTML(){
   }).join("");
 }
 
+/* ---------- bracket view ---------- */
+function groupMiniHTML(){
+  const mine=tracked().map(t=>t.team);
+  return Object.keys(T.groups).map(grp=>{
+    const st=E.standings(T,scores,grp);
+    return `<div class="groupMini"><h3>Group ${grp}</h3>${st.arr.map((x,i)=>`<div class="gm ${mine.includes(x.team)?"me":""}"><span class="r">${i+1}</span><span>${esc(x.team)}</span><span class="p">${x.p?x.pts+" pts":"–"}</span></div>`).join("")}${st.provisional?`<div class="meta">provisional</div>`:""}</div>`;
+  }).join("");
+}
+function renderBracket(){
+  if(!window.Bracket){ $("bracketMain").innerHTML="<div class='sub'>Bracket module not loaded.</div>"; return; }
+  const opts={team:tracked()[0].team};
+  $("bracketGroups").innerHTML=groupMiniHTML();
+  const all=window.Bracket.all(T,scores,opts);
+  const champ=all.find(x=>x.final);
+  $("bracketTitle").textContent=champ?"Championship bracket":"Bracket";
+  $("bracketMain").innerHTML=champ?champ.svg:"<div class='sub'>No final defined for this tournament.</div>";
+  // start scrolled to the tracked team's game when the bracket is wider than the screen
+  try{
+    const wrap=$("bracketMain"), mine=wrap.querySelector(".bk-mine rect");
+    if(mine&&wrap.scrollWidth>wrap.clientWidth){ const bb=mine.getBBox(); wrap.scrollLeft=Math.max(0,bb.x+bb.width/2-wrap.clientWidth/2); }
+  }catch(e){}
+  $("bracketPlacings").innerHTML=all.filter(x=>!x.final).map(x=>`<div class="resultGroup"><h3>${esc(x.title)}</h3><div class="bracketWrap">${x.svg}</div></div>`).join("")||"<div class='sub'>No placing games.</div>";
+}
+
 /* ---------- bulk import ---------- */
 function buildImportDraft(){
   const p=E.parseBulk(T,scores,$("bulkInput").value);
@@ -491,14 +516,17 @@ window.resetSimple=resetSimple;
 function render(){
   if(!T)return;
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  document.querySelector(".wrap").classList.toggle("wide",view==="BRACKET");
   const isTeam=view.startsWith("T:");
   $("nextCard").classList.toggle("hidden",!(isTeam||view==="ALL"));
   $("teamView").classList.toggle("hidden",!isTeam);
   $("allView").classList.toggle("hidden",view!=="ALL");
   $("resultsView").classList.toggle("hidden",view!=="RESULTS");
+  $("bracketView").classList.toggle("hidden",view!=="BRACKET");
   $("simpleView").classList.toggle("hidden",view!=="SIMPLE");
   if(isTeam){ const t=trackedByKey(view.slice(2)); $("nextGame").innerHTML=nextGameHTML([t.key]); renderTeam(t); }
   else if(view==="ALL"){ $("nextGame").innerHTML=nextGameHTML(tracked().map(t=>t.key)); $("allTitle").textContent="All "+commonLabel()+" matches"; $("allTimeline").innerHTML=allHTML(); }
+  else if(view==="BRACKET"){ renderBracket(); }
   else if(view==="RESULTS"){ $("allResults").innerHTML=resultsHTML(); $("knockoutResults").innerHTML=knockoutResultsHTML(); $("allTables").innerHTML=allTablesHTML(); }
   else if(view==="SIMPLE"){ renderSimple(); }
 }
