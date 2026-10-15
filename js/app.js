@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.4.0";
+const PAGE_VERSION="1.4.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -84,7 +84,8 @@ function init(tournament,reg,entry){
   }
   if(T.pools){
     const pools=Object.entries(T.pools).map(([name,pin])=>`<a class="action secondary" href="${esc(mapsUrl(pin.lat,pin.lng,""))}" target="_blank" rel="noopener">${esc(name)} ↗</a>`).join("");
-    $("events").insertAdjacentHTML("afterend",`<h3>Pools</h3><div class="btns">${pools}</div><div class="sub">Each link opens the pool's pin in Google Maps. ${esc(T.address||"")}</div>`);
+    const venue=T.venueMap?`<a href="${esc(mapsUrl(T.venueMap.lat,T.venueMap.lng,T.venueMap.label))}" target="_blank" rel="noopener">${esc(T.venueMap.label||T.venue||"Venue")}</a>`:esc(T.venue||"");
+    $("events").insertAdjacentHTML("afterend",`<h3>Pools</h3><div class="sub" style="margin-bottom:8px">${venue}${T.address?" • "+esc(T.address):""}</div><div class="btns">${pools}</div><div class="sub">Each button opens that pool's pin in Google Maps.</div>`);
   }
   $("events").innerHTML=(T.events||[]).map(ev=>{
     const map=ev.map?` <a class="extLink" href="${esc(mapsUrl(ev.map.lat,ev.map.lng,ev.map.label))}" target="_blank" rel="noopener">Map ↗</a>`:"";
