@@ -142,6 +142,24 @@ async function run(tid){
   w.selectGroupPos(grpD,2);
   ok(!d.querySelector("#bracketView .bk-sel")&&d.getElementById("bracketHint").classList.contains("hidden"),"second click clears the selection");
 
+  // share per game: text reflects the state; desktop fallback opens wa.me with the text
+  {
+    click('.tab[data-view="T:'+T.tracked[0].key+'"]');
+    const opened=[]; w.open=(u)=>{opened.push(u);return null;};
+    const games=E.sortByTime(E.teamGroupGames(T,T.tracked[0].team));
+    const tbl=w.supabase._api._table, sc={}; Object.values(tbl).forEach(r=>sc[r.fixture_id]={a:r.score_a==null?"":r.score_a,b:r.score_b==null?"":r.score_b});
+    // whatever the state, every share opens wa.me with the tournament name and the game time
+    for(const g of games){ await w.shareGame(g.id); }
+    ok(opened.length===games.length&&opened.every(u=>/^https:\/\/wa\.me\/\?text=/.test(u)),"share falls back to wa.me");
+    const texts=opened.map(u=>decodeURIComponent(u.split("text=")[1]));
+    ok(texts.every((x,i)=>x.includes(games[i].time)&&x.includes(T.name)&&/https?:\/\//.test(x)),"share text carries time, tournament name and the site link");
+    ok(texts.some(x=>/(beat|lost to|draw|vs)/.test(x)),"share text describes the game");
+    const anyPlayed=games.filter(g=>E.decisive(T,sc,g));
+    if(anyPlayed.length) ok(texts.some(x=>/(beat|lost to) .+ \d+–\d+/.test(x)),"a played game shares the result from the team's point of view");
+    ok(d.querySelectorAll('#poolSchedule a.share').length===3,"share link on each group game");
+    ok(d.querySelector('#nextGame a.share')||/Tournament complete/.test(d.getElementById("nextGame").textContent),"share link on the next-game card (or tournament complete)");
+  }
+
   // simple planner
   click('.tab[data-view="SIMPLE"]');
   d.getElementById("simplePos").value="2"; d.getElementById("simplePos").dispatchEvent(new w.Event("change"));
