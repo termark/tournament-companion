@@ -177,6 +177,9 @@ window.TOURNAMENT={
 
   events:[
     {date:FRI,time:"07:00",label:"Opening welcome"},
+    {date:FRI,time:"18:00",label:"Herschel U13 parents' dinner",highlight:true,
+     detail:"The Higher Ground Restaurant, 40 Peter Place (on the St Stithians grounds). Table booked for the parents who said yes on the WhatsApp group.",
+     map:{lat:-26.0812255,lng:28.0105384,label:"The Higher Ground Restaurant"}},
     {date:FRI,time:"18:10",label:"Day end (weather buffer until 21:00)"},
     {date:SAT,time:"18:00",label:"Day end (weather buffer until 21:00)"},
     {date:SUN,time:"12:15",label:"Introduction of girls' finalists, then the FINAL"},

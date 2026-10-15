@@ -65,7 +65,10 @@ async function run(tid){
     ok(maps.length===3,"map link on each group game");
     ok(maps.every(a=>/query=-?\d+\.\d+%2C\d+\.\d+/.test(a.href)),"map links carry coordinates");
     ok(d.querySelector('#nextGame a[href*="google.com/maps"]'),"map link on the next-game card");
-    ok(d.querySelectorAll('#eventsCard a[href*="google.com/maps"]').length===Object.keys(T.pools).length,"programme lists every pool with a map link");
+    ok(d.querySelectorAll('#eventsCard .btns a[href*="google.com/maps"]').length===Object.keys(T.pools).length,"programme lists every pool with a map link");
+    const hi=(T.events||[]).filter(e=>e.highlight);
+    ok(d.querySelectorAll('#events .eventHi').length===hi.length,"highlighted programme items rendered");
+    ok(hi.every(e=>!e.map||[...d.querySelectorAll('#events .eventHi a[href*="google.com/maps"]')].some(a=>a.href.includes(String(e.map.lat)))),"highlighted item carries its own map link");
   }
   ok(/has not started/.test(d.getElementById("projection").textContent),"projection explains group not started");
   ok(d.querySelectorAll("#poolSchedule input:disabled").length===6,"score inputs disabled for public");

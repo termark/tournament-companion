@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.3.0";
+const PAGE_VERSION="1.3.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -85,7 +85,10 @@ function init(tournament,reg,entry){
     const pools=Object.entries(T.pools).map(([name,pin])=>`<a class="action secondary" href="${esc(mapsUrl(pin.lat,pin.lng,""))}" target="_blank" rel="noopener">${esc(name)} ↗</a>`).join("");
     $("events").insertAdjacentHTML("afterend",`<h3>Pools</h3><div class="btns">${pools}</div><div class="sub">Each link opens the pool's pin in Google Maps. ${esc(T.address||"")}</div>`);
   }
-  $("events").innerHTML=(T.events||[]).map(ev=>`<div class="match"><div class="day">${esc(E.dayLabel(T,ev.date))}</div><div class="time">${esc(ev.time)}</div><div><strong>${esc(ev.label)}</strong>${ev.detail?`<div class="meta">${esc(ev.detail)}</div>`:""}</div></div>`).join("")||"<div class='sub'>No programme items.</div>";
+  $("events").innerHTML=(T.events||[]).map(ev=>{
+    const map=ev.map?` <a class="extLink" href="${esc(mapsUrl(ev.map.lat,ev.map.lng,ev.map.label))}" target="_blank" rel="noopener">Map ↗</a>`:"";
+    return `<div class="match${ev.highlight?" eventHi":""}"><div class="day">${esc(E.dayLabel(T,ev.date))}</div><div class="time">${esc(ev.time)}</div><div><strong>${esc(ev.label)}</strong>${ev.highlight?'<span class="badge hi">Herschel</span>':""}${ev.detail?`<div class="meta">${esc(ev.detail)}${map}</div>`:map}</div></div>`;
+  }).join("")||"<div class='sub'>No programme items.</div>";
   $("notes").innerHTML=`<div class="notice warn"><ul class="notes">${(T.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul></div>`;
   $("footer").innerHTML=`termark/tournament-companion • ${esc(T.name)} • page v${PAGE_VERSION}<br>Static GitHub Pages app • shared results via Supabase, cached in this browser`;
 

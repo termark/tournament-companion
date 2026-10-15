@@ -94,7 +94,7 @@ No build step, package manager or framework. Supabase Free provides the shared `
    - `tracked` – the team(s) to follow, `points`, `tiebreak` (`"wa"` or `"simple"`), `caps` (which fixture column wears which cap colour), `arriveMinutes`, optional `poolShort` (short pool names for the bracket boxes)
    - `groups`, `teams` (full names/origin, for the importer), `aliases`
    - `games` – every game once, in PDF order, numbered `n` = 1…N. Group games carry `{team:"…"}` slots; knockout games reference `{group:"D",rank:1}`, `{winner:27}` or `{loser:27}`, and placing games carry `places:[5,6]`.
-   - `events` and `notes` – the programme and the rules worth repeating on the page
+   - `events` and `notes` – the programme and the rules worth repeating on the page; an event can carry `highlight:true`, a `detail` line and a `map:{lat,lng,label}` for a Google Maps link (team dinners, meeting points)
 3. Add it to `tournaments/registry.js` (first entry = default).
 4. Run the validator (below). It refuses anything structurally impossible — a group position that enters the bracket twice, a winner that is never used, a placing game missing — and simulates hundreds of complete tournaments through the real engine.
 5. Commit and push; GitHub Pages redeploys.
