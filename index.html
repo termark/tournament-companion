@@ -149,11 +149,17 @@ button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight
 .extLink{font-size:.8rem;font-weight:700;color:var(--blue);text-decoration:none;margin-left:6px;white-space:nowrap}
 .tl{display:grid;grid-template-columns:52px 1fr;gap:6px 10px;align-items:center;margin-top:8px}
 .tl .h{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
-.tl .bar{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;height:30px}
-.tl .cell{border-radius:4px;background:#eef1f5;position:relative}
-.tl .cell.b1{background:#dbeafe}.tl .cell.b2{background:#93c5fd}.tl .cell.b3{background:#3b82f6}.tl .cell.b4{background:#1e3a8a}
-.tl .cell .lbl{position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;max-width:100%}
-.tl .cell.b1 .lbl,.tl .cell.b2 .lbl{color:#1e3a8a}
+.tl .bar{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;height:34px}
+.tl .cell{border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;font-variant-numeric:tabular-nums}
+.tl .cell.free{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.tl .cell.low{background:#fef3c7;color:#92400e}
+.tl .cell.mid{background:#fdba74;color:#7c2d12}
+.tl .cell.high{background:#f97316;color:#fff}
+.tl .cell.sure{background:#1e3a8a;color:#fff}
+.tl .cell .lbl{position:absolute;left:4px;right:4px;top:2px;font-size:.62rem;font-weight:800;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.95}
+.tl .cell.sure .lbl,.tl .cell.high .lbl{color:#fff}
+.tl .cell .pc{margin-top:8px}
+.tl .cell.free .pc{font-size:.8rem}
 .dayLegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .dayLegend span{display:inline-flex;align-items:center;gap:5px}
 .dayLegend i{display:inline-block;width:14px;height:14px;border-radius:3px}
@@ -184,10 +190,10 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.8.0"></script>
-<script src="js/bracket.js?v=1.8.0"></script>
-<script src="js/dayplan.js?v=1.8.0"></script>
-<script src="tournaments/registry.js?v=1.8.0"></script>
+<script src="js/engine.js?v=1.8.1"></script>
+<script src="js/bracket.js?v=1.8.1"></script>
+<script src="js/dayplan.js?v=1.8.1"></script>
+<script src="tournaments/registry.js?v=1.8.1"></script>
 </head>
 <body>
 <div class="wrap">
@@ -409,6 +415,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.8.0"></script>
+<script src="js/app.js?v=1.8.1"></script>
 </body>
 </html>

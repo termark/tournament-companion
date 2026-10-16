@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.8.0";
+const PAGE_VERSION="1.8.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -619,13 +619,14 @@ function renderDay(){
   document.querySelector("#dayView h2").textContent="When is "+t.label+" busy?";
   // timeline: one row per hour, four 15-min cells
   const hours={}; day.slots.forEach(s=>{ const h=Math.floor(s.from/60); (hours[h]=hours[h]||[]).push(s); });
-  const cls=p=>p>0.999?"b4":p>0.5?"b3":p>0.25?"b2":p>0?"b1":"";
+  const cls=p=>p<0.0001?"free":p>0.999?"sure":p>0.5?"high":p>0.25?"mid":"low";
+  const cellText=p=>p<0.0001?"✓":p>0.999?"●":pct(p);
   $("dayTimeline").innerHTML=`<div class="tl">`+Object.keys(hours).map(h=>`<div class="h">${String(h).padStart(2,"0")}:00</div><div class="bar">${hours[h].map(s=>{
     const g=s.games.length?E.gameById(T,s.games[0]):null;
     const startsHere=g&&Math.floor(toMinutes(g.time)/15)*15===s.from;
-    return `<div class="cell ${cls(s.busy)}" title="${D.fmt(s.from)}–${D.fmt(s.to)}: ${pct(s.busy)}${g?" — "+esc(g.label):""}">${startsHere?`<span class="lbl">${esc(window.Bracket?window.Bracket.shortLabel(g.label):g.label)}</span>`:""}</div>`;
+    return `<div class="cell ${cls(s.busy)}" title="${D.fmt(s.from)}–${D.fmt(s.to)}: ${s.busy<0.0001?"free on every route":pct(s.busy)+" of routes at the pool"}${g?" — "+esc(g.label):""}">${startsHere?`<span class="lbl">${esc(window.Bracket?window.Bracket.shortLabel(g.label):g.label)}</span>`:""}<span class="pc">${cellText(s.busy)}</span></div>`;
   }).join("")}</div>`).join("")+`</div>`;
-  $("dayLegend").innerHTML=`<span><i style="background:#eef1f5"></i>free on every path</span><span><i style="background:#dbeafe"></i>up to 25%</span><span><i style="background:#93c5fd"></i>25–50%</span><span><i style="background:#3b82f6"></i>50–99%</span><span><i style="background:#1e3a8a"></i>certain</span>`;
+  $("dayLegend").innerHTML=`<span><i style="background:#dcfce7;border:1px solid #bbf7d0"></i>✓ free on every route</span><span><i style="background:#fef3c7"></i>busy on up to 25% of routes</span><span><i style="background:#fdba74"></i>25–50%</span><span><i style="background:#f97316"></i>50–99%</span><span><i style="background:#1e3a8a"></i>● at the pool for certain</span>`;
   // windows: one row per distinct window, best confidence first; lead with the pick
   const W=day.windows;
   const all=[...W.sure.map(w=>({...w,tier:"sure"})),...W.likely.map(w=>({...w,tier:"likely"})),...W.maybe.map(w=>({...w,tier:"maybe"}))];
