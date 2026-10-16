@@ -55,7 +55,7 @@ async function run(tid){
     ok(!d.getElementById("heroTeamLogo").classList.contains("hidden")&&d.querySelector("#heroTeamLogo img"),"team logo in the hero");
     [T.logos.tournament.src,T.logos.team.src,T.logos.team.mark].filter(Boolean).forEach(src=>ok(fs.existsSync(path.join(root,src)),"logo file exists: "+src));
   }
-  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+4:4),"tabs generated");
+  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+5:5),"tabs generated");
   const text=()=>d.body.textContent;
   const click=sel=>{ const el=d.querySelector(sel); ok(!!el,"element exists: "+sel); if(el)el.click(); };
 
@@ -124,6 +124,15 @@ async function run(tid){
   await w.loadSharedScores(false); await new Promise(r=>setTimeout(r,50));
   ok(/pens 4–2|pens 2–4/.test(d.getElementById("knockoutOutput").textContent),"shoot-out result rendered");
   ok(/Final placing/.test(d.getElementById("knockoutOutput").textContent),"bracket advanced past the shoot-out");
+
+  // day plan: tabs per remaining day, timeline cells, windows and games with probabilities
+  click('.tab[data-view="DAY"]');
+  ok(!d.getElementById("dayView").classList.contains("hidden"),"day view visible");
+  ok(d.querySelectorAll("#dayTabs .tab").length>=1,"day tabs rendered");
+  ok(d.querySelectorAll("#dayTimeline .cell").length>=16,"timeline cells rendered");
+  ok(/\d+%/.test(d.getElementById("dayGames").textContent),"games carry probabilities");
+  ok(/possible route/.test(d.getElementById("dayBasis").textContent),"basis line explains the model");
+  const dayBtns=[...d.querySelectorAll("#dayTabs .tab")]; if(dayBtns.length>1){ const want=dayBtns[1].textContent; dayBtns[1].click(); ok(d.querySelector("#dayTabs .tab.active").textContent===want&&d.getElementById("dayTitle").textContent.startsWith(want),"switching day works"); }
 
   // bracket view: every knockout game drawn, my path highlighted, group minis present
   click('.tab[data-view="BRACKET"]');

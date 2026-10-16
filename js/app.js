@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.7.0";
+const PAGE_VERSION="1.8.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -61,10 +61,10 @@ function init(tournament,reg,entry){
   // tabs
   let tabs=tracked().map(t=>`<button class="tab" data-view="T:${esc(t.key)}">${esc(t.label)}</button>`);
   if(tracked().length>1) tabs.push(`<button class="tab" data-view="ALL">All ${esc(commonLabel())}</button>`);
-  tabs.push(`<button class="tab" data-view="BRACKET">Bracket</button>`,`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
+  tabs.push(`<button class="tab" data-view="BRACKET">Bracket</button>`,`<button class="tab" data-view="DAY">Day plan</button>`,`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
   $("tabs").innerHTML=tabs.join("");
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
-  const validViews=[...tracked().map(t=>"T:"+t.key),"BRACKET","RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
+  const validViews=[...tracked().map(t=>"T:"+t.key),"BRACKET","DAY","RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
   if(!validViews.includes(view)) view="T:"+tracked()[0].key;
 
   // simple planner team picker
@@ -602,6 +602,58 @@ async function feedSubmit(){
   setSyncStatus(`Updated ${rows.length} result${rows.length===1?"":"s"} from ${(T.external&&T.external.name)||"the results page"} — thank you`);
 }
 
+/* ---------- day plan ---------- */
+let dayPick=null;
+function pct(p){ return Math.round(p*100)+"%"; }
+function confTag(p){ return p>0.999?'<span class="conf sure">certain</span>':p>=0.5?'<span class="conf likely">likely</span>':'<span class="conf maybe">possible</span>'; }
+function renderDay(){
+  if(!window.DayPlan){ $("dayTimeline").innerHTML="<div class='sub'>Day plan module not loaded.</div>"; return; }
+  const t=tracked()[0];
+  const days=window.DayPlan.days(T,scores,t.team);
+  const today=new Date(); const iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  if(!dayPick||!days.includes(dayPick)) dayPick=days.find(d=>d>=iso)||days[days.length-1];
+  $("dayTabs").innerHTML=days.map(d=>`<button class="tab ${d===dayPick?"active":""}" onclick="pickDay('${d}')">${esc(E.dayLabel(T,d))}</button>`).join("");
+  if(!dayPick){ $("dayTimeline").innerHTML="<div class='sub'>Nothing left to play.</div>"; return; }
+  const D=window.DayPlan, day=D.day(T,scores,t.team,dayPick);
+  $("dayTitle").textContent=E.dayLabel(T,dayPick)+" — "+t.label;
+  document.querySelector("#dayView h2").textContent="When is "+t.label+" busy?";
+  // timeline: one row per hour, four 15-min cells
+  const hours={}; day.slots.forEach(s=>{ const h=Math.floor(s.from/60); (hours[h]=hours[h]||[]).push(s); });
+  const cls=p=>p>0.999?"b4":p>0.5?"b3":p>0.25?"b2":p>0?"b1":"";
+  $("dayTimeline").innerHTML=`<div class="tl">`+Object.keys(hours).map(h=>`<div class="h">${String(h).padStart(2,"0")}:00</div><div class="bar">${hours[h].map(s=>{
+    const g=s.games.length?E.gameById(T,s.games[0]):null;
+    const startsHere=g&&Math.floor(toMinutes(g.time)/15)*15===s.from;
+    return `<div class="cell ${cls(s.busy)}" title="${D.fmt(s.from)}–${D.fmt(s.to)}: ${pct(s.busy)}${g?" — "+esc(g.label):""}">${startsHere?`<span class="lbl">${esc(window.Bracket?window.Bracket.shortLabel(g.label):g.label)}</span>`:""}</div>`;
+  }).join("")}</div>`).join("")+`</div>`;
+  $("dayLegend").innerHTML=`<span><i style="background:#eef1f5"></i>free on every path</span><span><i style="background:#dbeafe"></i>up to 25%</span><span><i style="background:#93c5fd"></i>25–50%</span><span><i style="background:#3b82f6"></i>50–99%</span><span><i style="background:#1e3a8a"></i>certain</span>`;
+  // windows: one row per distinct window, best confidence first; lead with the pick
+  const W=day.windows;
+  const all=[...W.sure.map(w=>({...w,tier:"sure"})),...W.likely.map(w=>({...w,tier:"likely"})),...W.maybe.map(w=>({...w,tier:"maybe"}))];
+  const uniq=[]; all.forEach(w=>{ if(!uniq.some(u=>u.label===w.label)) uniq.push(w); });
+  const lunch=m=>m>=11*60+30&&m<=14*60+30;
+  const midday=uniq.filter(w=>w.from<14*60+30&&w.to>11*60+30);
+  const pick=midday.find(w=>w.tier==="sure")||midday.find(w=>w.tier==="likely")||null;
+  const hrs=m=>(Math.round(m/60*10)/10)+" h";
+  const say=w=>w.tier==="sure"?`${hrs(w.minutes)} free whatever happens`:w.tier==="likely"?`${hrs(w.minutes)}, busy on at most ${pct(w.maxBusy)} of routes`:`${hrs(w.minutes)}, busy on up to ${pct(w.maxBusy)} of routes`;
+  const tag=w=>`<span class="conf ${w.tier}">${w.tier==="sure"?"certain":w.tier}</span>`;
+  const rows=uniq.map(w=>`<div class="win"><span class="t">${w.label}</span><span>${say(w)}${tag(w)}</span></div>`);
+  let lead="";
+  if(pick) lead=`<div class="notice ${pick.tier==="sure"?"ok":"warn"}" style="margin-bottom:10px"><strong>Lunch / meet-up:</strong> ${pick.label} — ${say(pick)}.</div>`;
+  else if(uniq.length) lead=`<div class="notice warn" style="margin-bottom:10px"><strong>No safe midday window yet.</strong> The Saturday route depends on today's group results; check again this evening.</div>`;
+  $("dayWindows").innerHTML=lead+(rows.join("")||"<div class='sub'>No window of 45 minutes or more is free on enough routes yet — check again after today's results.</div>");
+  // games
+  $("dayGames").innerHTML=day.games.map(x=>{
+    const g=x.game, p=E.participants(T,scores,g), side=p.a.team===t.team?"a":p.b.team===t.team?"b":null;
+    const opp=side?oppText(p[side==="a"?"b":"a"]):(E.slotText(p.a)+" vs "+E.slotText(p.b));
+    return `<div class="match"><div class="day"><span class="prob">${pct(x.prob)}</span></div><div class="time">${esc(g.time)}</div><div><strong>${esc(g.label)}</strong>${confTag(x.prob)}<div class="meta">vs ${esc(opp)} • ${esc(g.pool||"")} • arrive by ${arrive(g)}</div></div></div>`;
+  }).join("")||"<div class='sub'>No games for this team on this day.</div>";
+  const rk=E.teamRank(T,scores,t.team), ranks=D.possibleRanks(T,scores,t.team);
+  $("dayBasis").innerHTML=`Based on ${day.paths} possible route${day.paths===1?"":"s"}: `+(rk.confirmed?`${E.ordinal(rk.rank)} in Group ${rk.group} is settled`:`Group ${rk.group} finish still open (${ranks.map(r=>E.ordinal(r)).join(", ")} all possible, weighted equally)`)+`; each knockout game not yet played is taken as 50/50. Percentages are a planning aid, not a prediction of results.`;
+}
+function toMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+function pickDay(d){ dayPick=d; renderDay(); }
+window.pickDay=pickDay;
+
 /* ---------- bulk import (editors) ---------- */
 function buildImportDraft(){
   const p=E.parseBulk(T,scores,$("bulkInput").value);
@@ -709,10 +761,12 @@ function render(){
   $("allView").classList.toggle("hidden",view!=="ALL");
   $("resultsView").classList.toggle("hidden",view!=="RESULTS");
   $("bracketView").classList.toggle("hidden",view!=="BRACKET");
+  $("dayView").classList.toggle("hidden",view!=="DAY");
   $("simpleView").classList.toggle("hidden",view!=="SIMPLE");
   if(isTeam){ const t=trackedByKey(view.slice(2)); $("nextGame").innerHTML=nextGameHTML([t.key]); renderTeam(t); }
   else if(view==="ALL"){ $("nextGame").innerHTML=nextGameHTML(tracked().map(t=>t.key)); $("allTitle").textContent="All "+commonLabel()+" matches"; $("allTimeline").innerHTML=allHTML(); }
   else if(view==="BRACKET"){ renderBracket(); }
+  else if(view==="DAY"){ renderDay(); }
   else if(view==="RESULTS"){ $("allResults").innerHTML=resultsHTML(); $("knockoutResults").innerHTML=knockoutResultsHTML(); $("allTables").innerHTML=allTablesHTML(); }
   else if(view==="SIMPLE"){ renderSimple(); }
 }

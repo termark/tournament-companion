@@ -21,6 +21,7 @@ Open the live site on any phone or computer. Tabs:
 
 - **Herschel** (one tab per tracked team) – group games, live group standings, and the knockout route. While group games are still being played the route is a projection from the current table; once the group is complete and the tie-break is unambiguous it is marked **Confirmed**. Each knockout game shows the opponent as a team name when it is known, or as the bracket placeholder (for example *Winner of G#27 — Cross-over play-off 3: 3rd Group A vs 2nd Group B*) when it is not. After the next unplayed game the page shows the **If WIN / If LOSS** follow-ups with day, time and pool.
 - **Bracket** – wall-chart view: the four group panels, the championship bracket drawn World-Cup style (final in the middle, bronze game underneath) and a tree for every placing bracket. Drawn from the data file, so it is right for any tournament the validator accepts; teams fill in as results come in and the tracked team's path is highlighted. Scrolls sideways on a phone.
+- **Day plan** – for planning lunch or a meet-up: one strip per remaining day, each 15-minute cell shaded by how likely Herschel is at the pool then (game time plus the 30-minute arrival), the free windows with a confidence tag, and the games that can fall on that day with their probability. Computed by enumerating every route still open (group positions still reachable, 50/50 at each unplayed knockout game); it firms up as results are entered.
 - **All Herschel** (only when more than one team is tracked) – combined timeline.
 - **Results** – every game in the tournament with score entry, a bulk importer, and all live group tables. Knockout games fill in their participants automatically as the group tables settle and earlier knockout results come in.
 - **Simple** – offline planner: pick the final group position, then select Win/Loss after each knockout game to reveal the next one. Stored locally in the browser; needs no sign-in.
@@ -86,6 +87,7 @@ GitHub Pages
 index.html                 markup + CSS
 js/engine.js               standings, slot resolution, bracket walk, bulk parser (no DOM; also runs in Node)
 js/bracket.js              draws the championship and placing brackets as SVG from the data (no DOM)
+js/dayplan.js              per-day availability of the tracked team from all remaining routes (no DOM)
 js/app.js                  rendering, Supabase sync, editor sign-in, local cache
 tournaments/registry.js    which tournaments the page shows; first one is the default (unlisted data files stay as validator regression cases)
 tournaments/<id>.js        one data file per tournament (groups, games, bracket, rules text)
@@ -139,6 +141,7 @@ tournament-companion/
 ├── js/
 │   ├── engine.js
 │   ├── bracket.js
+│   ├── dayplan.js
 │   └── app.js
 ├── tournaments/
 │   ├── registry.js

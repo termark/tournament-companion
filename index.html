@@ -147,6 +147,22 @@ button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight
 .badge.hi{background:var(--blue);color:#fff}
 .extLink.share{color:#15803d}
 .extLink{font-size:.8rem;font-weight:700;color:var(--blue);text-decoration:none;margin-left:6px;white-space:nowrap}
+.tl{display:grid;grid-template-columns:52px 1fr;gap:6px 10px;align-items:center;margin-top:8px}
+.tl .h{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.tl .bar{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;height:30px}
+.tl .cell{border-radius:4px;background:#eef1f5;position:relative}
+.tl .cell.b1{background:#dbeafe}.tl .cell.b2{background:#93c5fd}.tl .cell.b3{background:#3b82f6}.tl .cell.b4{background:#1e3a8a}
+.tl .cell .lbl{position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;max-width:100%}
+.tl .cell.b1 .lbl,.tl .cell.b2 .lbl{color:#1e3a8a}
+.dayLegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.8rem;color:var(--muted)}
+.dayLegend span{display:inline-flex;align-items:center;gap:5px}
+.dayLegend i{display:inline-block;width:14px;height:14px;border-radius:3px}
+.win{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line)}
+.win:first-child{border-top:0}
+.win .t{font-weight:900;color:var(--blue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.conf{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:850;margin-left:6px}
+.conf.sure{background:var(--greenSoft);color:var(--green)}.conf.likely{background:var(--amberSoft);color:var(--amber)}.conf.maybe{background:var(--orangeSoft);color:var(--orange)}
+.prob{display:inline-block;min-width:44px;text-align:right;font-weight:900;font-variant-numeric:tabular-nums;color:var(--blue)}
 .footer{margin-top:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
 .projection{font-size:1rem;line-height:1.45}
 .projection strong{color:var(--blue)}
@@ -168,9 +184,10 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.7.0"></script>
-<script src="js/bracket.js?v=1.7.0"></script>
-<script src="tournaments/registry.js?v=1.7.0"></script>
+<script src="js/engine.js?v=1.8.0"></script>
+<script src="js/bracket.js?v=1.8.0"></script>
+<script src="js/dayplan.js?v=1.8.0"></script>
+<script src="tournaments/registry.js?v=1.8.0"></script>
 </head>
 <body>
 <div class="wrap">
@@ -249,6 +266,28 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
     <section class="card">
       <h2>Placing brackets</h2>
       <div id="bracketPlacings"></div>
+    </section>
+  </section>
+
+  <section id="dayView" class="hidden">
+    <section class="card">
+      <h2>When is Herschel busy?</h2>
+      <div class="sub">For planning lunch or a meet-up. Each strip is a day; the darker the hour, the more likely Herschel is at the pool (game time plus the 30-minute arrival). It firms up as results come in.</div>
+      <div id="dayTabs" class="tabs" style="margin-top:12px"></div>
+    </section>
+    <section class="card">
+      <h2 id="dayTitle">Saturday</h2>
+      <div id="dayTimeline"></div>
+      <div id="dayLegend" class="dayLegend"></div>
+    </section>
+    <section class="card">
+      <h2>Free windows</h2>
+      <div id="dayWindows"></div>
+    </section>
+    <section class="card">
+      <h2>Possible games that day</h2>
+      <div id="dayGames"></div>
+      <div id="dayBasis" class="sub"></div>
     </section>
   </section>
 
@@ -370,6 +409,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.7.0"></script>
+<script src="js/app.js?v=1.8.0"></script>
 </body>
 </html>
