@@ -13,6 +13,7 @@ const fs=require("fs"), path=require("path"), vm=require("vm");
 const root=path.resolve(__dirname,"..");
 const E=require(path.join(root,"js","engine.js"));
 const B=require(path.join(root,"js","bracket.js"));
+const St=require(path.join(root,"js","stats.js"));
 
 function loadWindowScript(file){ const window={}; vm.runInNewContext(fs.readFileSync(path.join(root,file),"utf8"),{window}); return window; }
 const registry=loadWindowScript("tournaments/registry.js").TOURNAMENT_REGISTRY;
@@ -346,6 +347,21 @@ function brackets(T){
   ok(new RegExp('class="bk-row[^"]*won[^"]*"[^>]*>'+winner.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").slice(0,21)).test(svg),"final: winner row marked won");
 }
 
+/* ---------- stats ---------- */
+function statsChecks(T){
+  const scores=simulate(T,5,true);
+  const tab=St.table(T,scores), ov=St.overview(T,scores);
+  eq(tab.length,E.allTeams(T).length,"stats: one row per team");
+  const sumGF=tab.reduce((s,r)=>s+r.gf,0), sumGA=tab.reduce((s,r)=>s+r.ga,0);
+  eq(sumGF,sumGA,"stats: total goals for equals total goals against");
+  eq(sumGF,ov.goals,"stats: overview goals matches table");
+  eq(tab.reduce((s,r)=>s+r.gd,0),0,"stats: goal differences sum to zero");
+  eq(tab.reduce((s,r)=>s+r.p,0),ov.games*2,"stats: appearances = 2 × games");
+  ok(tab.every((r,i)=>i===0||tab[i-1].gd>=r.gd),"stats: sorted by goal difference");
+  const c=St.compare(T,scores,T.tracked[0].team,tab[0].team===T.tracked[0].team?tab[1].team:tab[0].team,6);
+  ok(c.a&&c.b&&Array.isArray(c.common),"stats: compare returns both rows and common opponents");
+}
+
 /* ---------- run ---------- */
 const only=process.argv[2];
 dataFiles.forEach(file=>{
@@ -354,7 +370,7 @@ dataFiles.forEach(file=>{
   const listed=registry.some(r=>r.id===T.id);
   console.log("== "+T.id+" ("+T.games.length+" games, "+E.allTeams(T).length+" teams"+(listed?"":", not in registry")+")");
   const before=failures;
-  structural(T); simulation(T); bulk(T); tiebreak(T); brackets(T); mycomlink(T);
+  structural(T); simulation(T); bulk(T); tiebreak(T); brackets(T); mycomlink(T); statsChecks(T);
   if(T.id==="saints-invitational-2026-junior-girls") expectSaints(T);
   if(T.id==="mackenzie-cup-2026") expectMackenzie(T);
   console.log("  "+(failures===before?"OK":"FAILED")+" — "+checks+" checks so far");

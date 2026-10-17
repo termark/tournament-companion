@@ -169,6 +169,21 @@ button.action,a.action{border:0;border-radius:11px;padding:11px 14px;font-weight
 .conf{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:850;margin-left:6px}
 .conf.sure{background:var(--greenSoft);color:var(--green)}.conf.likely{background:var(--amberSoft);color:var(--amber)}.conf.maybe{background:var(--orangeSoft);color:var(--orange)}
 .prob{display:inline-block;min-width:44px;text-align:right;font-weight:900;font-variant-numeric:tabular-nums;color:var(--blue)}
+.cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;margin-top:6px}
+.cmp .k{text-align:center;font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.cmp .va{text-align:right;font-weight:900;font-size:1.05rem;color:var(--blue);font-variant-numeric:tabular-nums}
+.cmp .vb{text-align:left;font-weight:900;font-size:1.05rem;color:#9a3412;font-variant-numeric:tabular-nums}
+.cmp .hd{font-weight:900;font-size:1.05rem}
+.cmp .hd.a{text-align:right;color:var(--blue)}.cmp .hd.b{text-align:left;color:#9a3412}
+.cmp .edge{box-shadow:inset 0 -3px 0 currentColor}
+.stTable td.team{text-align:left;cursor:pointer}
+.stTable tr.open td{background:#f8faff}
+.stDetail td{padding:0 6px 10px!important;text-align:left!important;white-space:normal!important}
+.stDetail .meta{line-height:1.6}
+.numGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.num{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fafcff}
+.num b{display:block;font-size:1.4rem;color:var(--blue);font-variant-numeric:tabular-nums}
+.num span{font-size:.8rem;color:var(--muted)}
 .footer{margin-top:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
 .projection{font-size:1rem;line-height:1.45}
 .projection strong{color:var(--blue)}
@@ -190,10 +205,11 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}.card,.hero{box-shadow:none}.noPrint{display:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/engine.js?v=1.8.3"></script>
-<script src="js/bracket.js?v=1.8.3"></script>
-<script src="js/dayplan.js?v=1.8.3"></script>
-<script src="tournaments/registry.js?v=1.8.3"></script>
+<script src="js/engine.js?v=1.9.0"></script>
+<script src="js/bracket.js?v=1.9.0"></script>
+<script src="js/dayplan.js?v=1.9.0"></script>
+<script src="js/stats.js?v=1.9.0"></script>
+<script src="tournaments/registry.js?v=1.9.0"></script>
 </head>
 <body>
 <div class="wrap">
@@ -272,6 +288,22 @@ ul.notes{margin:0;padding-left:18px}ul.notes li{margin:6px 0;line-height:1.45;fo
     <section class="card">
       <h2>Placing brackets</h2>
       <div id="bracketPlacings"></div>
+    </section>
+  </section>
+
+  <section id="statsView" class="hidden">
+    <section class="card">
+      <h2 id="statsNextTitle">Next opponent</h2>
+      <div id="statsCompare"></div>
+    </section>
+    <section class="card">
+      <h2>Tournament table by goal difference</h2>
+      <div class="sub">All games played so far, group and knockout. Tap a team for its results.</div>
+      <div id="statsTable"></div>
+    </section>
+    <section class="card">
+      <h2>Tournament in numbers</h2>
+      <div id="statsOverview"></div>
     </section>
   </section>
 
@@ -415,6 +447,6 @@ Kingsmead 2 2 Roedean"></textarea>
 
   <div class="footer" id="footer"></div>
 </div>
-<script src="js/app.js?v=1.8.3"></script>
+<script src="js/app.js?v=1.9.0"></script>
 </body>
 </html>

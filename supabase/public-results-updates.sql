@@ -37,4 +37,20 @@ create policy "public update results"
   using (true)
   with check (true);
 
--- The existing "public read" and "authenticated write" policies stay as they are.
+-- Editors (signed-in users) need the same reads plus writes. Granting the anon policies alone
+-- left the authenticated role without SELECT, so a signed-in editor saw an empty table.
+grant select, insert, update on public.match_results to authenticated;
+
+drop policy if exists "authenticated read results" on public.match_results;
+create policy "authenticated read results" on public.match_results
+  for select to authenticated using (true);
+
+drop policy if exists "authenticated write results" on public.match_results;
+create policy "authenticated write results" on public.match_results
+  for insert to authenticated with check (true);
+
+drop policy if exists "authenticated update results" on public.match_results;
+create policy "authenticated update results" on public.match_results
+  for update to authenticated using (true) with check (true);
+
+-- Nobody deletes through the API; corrections are overwrites.

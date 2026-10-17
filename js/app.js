@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.8.3";
+const PAGE_VERSION="1.9.0";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -61,10 +61,10 @@ function init(tournament,reg,entry){
   // tabs
   let tabs=tracked().map(t=>`<button class="tab" data-view="T:${esc(t.key)}">${esc(t.label)}</button>`);
   if(tracked().length>1) tabs.push(`<button class="tab" data-view="ALL">All ${esc(commonLabel())}</button>`);
-  tabs.push(`<button class="tab" data-view="BRACKET">Bracket</button>`,`<button class="tab" data-view="DAY">Day plan</button>`,`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
+  tabs.push(`<button class="tab" data-view="BRACKET">Bracket</button>`,`<button class="tab" data-view="DAY">Day plan</button>`,`<button class="tab" data-view="STATS">Stats</button>`,`<button class="tab" data-view="RESULTS">Results</button>`,`<button class="tab" data-view="SIMPLE">Simple</button>`);
   $("tabs").innerHTML=tabs.join("");
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
-  const validViews=[...tracked().map(t=>"T:"+t.key),"BRACKET","DAY","RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
+  const validViews=[...tracked().map(t=>"T:"+t.key),"BRACKET","DAY","STATS","RESULTS","SIMPLE"].concat(tracked().length>1?["ALL"]:[]);
   if(!validViews.includes(view)) view="T:"+tracked()[0].key;
 
   // simple planner team picker
@@ -624,6 +624,67 @@ async function feedSubmit(){
   setSyncStatus(`Updated ${rows.length} result${rows.length===1?"":"s"} from ${(T.external&&T.external.name)||"the results page"} — thank you`);
 }
 
+/* ---------- stats ---------- */
+let statsOpen=null;
+function renderStats(){
+  const St=window.Stats; if(!St){ $("statsTable").innerHTML="<div class='sub'>Stats module not loaded.</div>"; return; }
+  const t=tracked()[0], tab=St.table(T,scores), ov=St.overview(T,scores), f1=St.fmt1;
+  // next opponent comparison
+  const nx=E.nextForTeam(T,scores,t.team);
+  let oppTeam=null, oppLabel="", gameLabel="";
+  if(nx.kind==="knockout"){ const o=nx.step.opp; oppTeam=o.team||null; oppLabel=oppText(o); gameLabel=nx.game.label+" • "+day(nx.game)+" "+nx.game.time; }
+  else if(nx.kind==="group"){ const g=nx.game; oppTeam=g.a.team===t.team?g.b.team:g.a.team; oppLabel=oppTeam; gameLabel="Group "+g.group+" • "+day(g)+" "+g.time; }
+  if(oppTeam&&tab.find(r=>r.team===oppTeam)&&tab.find(r=>r.team===oppTeam).p){
+    const c=St.compare(T,scores,t.team,oppTeam,6);
+    $("statsNextTitle").textContent=gameLabel?`Next: ${gameLabel}`:"Next opponent";
+    const row=(k,va,vb,better)=>{ // better: "high"|"low"|null
+      let ca="",cb=""; if(better&&va!==vb){ const aWins=better==="high"?va>vb:va<vb; if(aWins)ca="edge"; else cb="edge"; }
+      return `<div class="va ${ca}">${va}</div><div class="k">${k}</div><div class="vb ${cb}">${vb}</div>`;
+    };
+    let h=`<div class="cmp"><div class="hd a">${esc(t.label)}</div><div class="k">vs</div><div class="hd b">${esc(oppTeam)}</div>`;
+    h+=row("Played",c.a.p,c.b.p,null);
+    h+=row("W-D-L",`${c.a.w}-${c.a.d}-${c.a.l}`,`${c.b.w}-${c.b.d}-${c.b.l}`,null);
+    h+=row("Goals for / game",f1(c.a.avgF),f1(c.b.avgF),"high");
+    h+=row("Conceded / game",f1(c.a.avgA),f1(c.b.avgA),"low");
+    h+=row("Goal difference",(c.a.gd>0?"+":"")+c.a.gd,(c.b.gd>0?"+":"")+c.b.gd,"high");
+    if(c.knockA.n||c.knockB.n) h+=row("Knockout games",`${c.knockA.gf}–${c.knockA.ga}`,`${c.knockB.gf}–${c.knockB.ga}`,null);
+    h+=`</div>`;
+    if(c.h2h.length) h+=`<div class="notice ok" style="margin-top:10px"><strong>Already met:</strong> ${c.h2h.map(x=>`${esc(x.label)} ${x.gf}–${x.ga}${x.pens?` (pens ${x.pens.a}–${x.pens.b})`:""}`).join(", ")}</div>`;
+    if(c.common.length) h+=`<h3>Common opponents</h3>`+c.common.map(x=>`<div class="match"><div class="day" style="grid-column:1/3">${esc(x.opp)}</div><div><span style="color:var(--blue);font-weight:800">${esc(t.label)} ${x.a.gf}–${x.a.ga}</span> &nbsp;·&nbsp; <span style="color:#9a3412;font-weight:800">${esc(oppTeam)} ${x.b.gf}–${x.b.ga}</span></div></div>`).join("");
+    else h+=`<div class="sub" style="margin-top:8px">No common opponents yet.</div>`;
+    const topList=(gs)=>gs.length?gs.map(x=>`${esc(x.opp)} ${x.gf}–${x.ga}${x.pens?" (pens)":""}`).join(", "):"none yet";
+    h+=`<h3>Against the other top-${c.topN} sides</h3><div class="meta"><b style="color:var(--blue)">${esc(t.label)}:</b> ${topList(c.vsTopA)}<br><b style="color:#9a3412">${esc(oppTeam)}:</b> ${topList(c.vsTopB)}</div>`;
+    h+=`<div class="sub" style="margin-top:8px">Form only — a 4×5-minute final is decided in the pool, not in a table.</div>`;
+    $("statsCompare").innerHTML=h;
+  } else {
+    $("statsNextTitle").textContent="Next opponent";
+    $("statsCompare").innerHTML=nx.kind==="done"?`<div class="sub">Tournament complete — ${esc(t.label)} finished ${E.ordinal(nx.placing)}.</div>`:`<div class="sub">${oppLabel?"Next opponent "+esc(oppLabel)+" — comparison appears once they are known and have played.":"Nothing to compare yet."}</div>`;
+  }
+  // table
+  const mine=tracked().map(x=>x.team);
+  const rows=tab.map((r,i)=>{
+    const gs=window.Bracket?window.Bracket.groupStyle(T,r.group):{fg:"",bg:""};
+    const open=statsOpen===r.team;
+    let tr=`<tr class="${mine.includes(r.team)?"myRow":""} ${open?"open":""}"><td class="rank">${i+1}</td><td class="team" onclick="toggleStatsTeam('${esc(r.team).replace(/'/g,"\\'")}')"><span class="badge" style="background:${gs.bg};color:${gs.fg};margin:0 6px 0 0">${esc(r.group)}</span><strong>${teamMark(r.team)}${esc(r.team)}</strong>${r.unbeaten&&r.p>=3?' <span class="badge soft">unbeaten</span>':""}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td><strong>${r.gd>0?"+":""}${r.gd}</strong></td><td>${f1(r.avgF)}</td><td>${f1(r.avgA)}</td></tr>`;
+    if(open) tr+=`<tr class="stDetail"><td colspan="11"><div class="meta">${r.games.map(x=>`${esc(E.dayLabel(T,x.date))} ${esc(x.time)} · ${esc(x.label)} · <b>${x.gf}–${x.ga}</b>${x.pens?` (pens ${x.pens.a}–${x.pens.b})`:""} vs ${esc(x.opp)} ${x.won?"✅":x.lost?"❌":"🤝"}`).join("<br>")}${r.cleanSheets?`<br>Clean sheets: ${r.cleanSheets}`:""}${r.bigWins?` · Wins by 10+: ${r.bigWins}`:""}</div></td></tr>`;
+    return tr;
+  }).join("");
+  $("statsTable").innerHTML=`<div class="tableWrap"><table class="table stTable"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>GF/g</th><th>GA/g</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  // overview
+  const gl=x=>{ if(!x)return "–"; const p=E.participants(T,scores,x.g); return `${esc(p.a.team)} ${x.r.a}–${x.r.b} ${esc(p.b.team)} <span class="meta" style="display:inline">(${esc(x.g.stage==="group"?"Group "+x.g.group:x.g.label)})</span>`; };
+  $("statsOverview").innerHTML=`<div class="numGrid">
+    <div class="num"><b>${ov.games}/${ov.total}</b><span>games played</span></div>
+    <div class="num"><b>${ov.goals}</b><span>goals</span></div>
+    <div class="num"><b>${f1(ov.avg)}</b><span>goals per game</span></div>
+    <div class="num"><b>${ov.byOne+ov.draws}</b><span>decided by one goal or level</span></div>
+    <div class="num"><b>${ov.tenPlus}</b><span>won by 10+</span></div>
+    <div class="num"><b>${ov.shootouts}</b><span>shoot-outs</span></div>
+  </div>
+  <div class="row"><div class="meta"><b>Highest-scoring:</b> ${gl(ov.highest)}<br><b>Biggest margin:</b> ${gl(ov.biggest)}${ov.closest.length?`<br><b>Closest:</b> ${ov.closest.map(gl).join(" · ")}`:""}</div></div>`;
+}
+function toggleStatsTeam(team){ statsOpen=statsOpen===team?null:team; renderStats(); }
+window.toggleStatsTeam=toggleStatsTeam;
+
 /* ---------- day plan ---------- */
 let dayPick=null;
 function pct(p){ return Math.round(p*100)+"%"; }
@@ -788,11 +849,13 @@ function render(){
   $("resultsView").classList.toggle("hidden",view!=="RESULTS");
   $("bracketView").classList.toggle("hidden",view!=="BRACKET");
   $("dayView").classList.toggle("hidden",view!=="DAY");
+  $("statsView").classList.toggle("hidden",view!=="STATS");
   $("simpleView").classList.toggle("hidden",view!=="SIMPLE");
   if(isTeam){ const t=trackedByKey(view.slice(2)); $("nextGame").innerHTML=nextGameHTML([t.key]); renderTeam(t); }
   else if(view==="ALL"){ $("nextGame").innerHTML=nextGameHTML(tracked().map(t=>t.key)); $("allTitle").textContent="All "+commonLabel()+" matches"; $("allTimeline").innerHTML=allHTML(); }
   else if(view==="BRACKET"){ renderBracket(); }
   else if(view==="DAY"){ renderDay(); }
+  else if(view==="STATS"){ renderStats(); }
   else if(view==="RESULTS"){ $("allResults").innerHTML=resultsHTML(); $("knockoutResults").innerHTML=knockoutResultsHTML(); $("allTables").innerHTML=allTablesHTML(); }
   else if(view==="SIMPLE"){ renderSimple(); }
 }

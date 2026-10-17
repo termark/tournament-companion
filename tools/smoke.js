@@ -55,7 +55,7 @@ async function run(tid){
     ok(!d.getElementById("heroTeamLogo").classList.contains("hidden")&&d.querySelector("#heroTeamLogo img"),"team logo in the hero");
     [T.logos.tournament.src,T.logos.team.src,T.logos.team.mark].filter(Boolean).forEach(src=>ok(fs.existsSync(path.join(root,src)),"logo file exists: "+src));
   }
-  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+5:5),"tabs generated");
+  ok(d.querySelectorAll(".tab").length===(T.tracked.length>1?T.tracked.length+6:6),"tabs generated");
   const text=()=>d.body.textContent;
   const click=sel=>{ const el=d.querySelector(sel); ok(!!el,"element exists: "+sel); if(el)el.click(); };
 
@@ -112,6 +112,18 @@ async function run(tid){
   ok(/Final placing: \d+(st|nd|rd|th)/.test(d.getElementById("knockoutOutput").textContent),"full tournament: final placing shown");
   ok(/Tournament complete/.test(d.getElementById("nextGame").textContent),"full tournament: next card says complete");
   ok(/Confirmed: \d(st|nd|rd|th) in Group/.test(d.getElementById("projection").textContent)||/provisional/i.test(d.getElementById("tieNotice").textContent),"full tournament: group position confirmed or flagged");
+
+  // stats: table of 16 rows ordered by GD, overview numbers, next-opponent comparison when known
+  click('.tab[data-view="STATS"]');
+  ok(!d.getElementById("statsView").classList.contains("hidden"),"stats view visible");
+  ok(d.querySelectorAll("#statsTable tbody tr:not(.stDetail)").length===E.allTeams(T).length,"stats table lists every team");
+  const gds=[...d.querySelectorAll("#statsTable tbody tr:not(.stDetail) td:nth-child(9)")].map(td=>Number(td.textContent.replace("+","")));
+  ok(gds.every((v,i)=>i===0||gds[i-1]>=v),"stats table sorted by goal difference");
+  ok(/goals per game/.test(d.getElementById("statsOverview").textContent),"overview numbers rendered");
+  w.toggleStatsTeam(T.tracked[0].team);
+  ok(d.querySelector("#statsTable tr.stDetail"),"tapping a team opens its results");
+  w.toggleStatsTeam(T.tracked[0].team);
+  click('.tab[data-view="T:'+T.tracked[0].key+'"]');
 
   // level knockout score → shoot-out inputs appear, then entering pens advances the bracket
   const w1=E.walk(T,E.sortByTime([]).length?{}:Object.fromEntries(Object.entries(scores)),T.tracked[0].team);
