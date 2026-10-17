@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.9.0";
+const PAGE_VERSION="1.9.1";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -650,7 +650,7 @@ function renderStats(){
     if(c.knockA.n||c.knockB.n) h+=row("Knockout games",`${c.knockA.gf}–${c.knockA.ga}`,`${c.knockB.gf}–${c.knockB.ga}`,null);
     h+=`</div>`;
     if(c.h2h.length) h+=`<div class="notice ok" style="margin-top:10px"><strong>Already met:</strong> ${c.h2h.map(x=>`${esc(x.label)} ${x.gf}–${x.ga}${x.pens?` (pens ${x.pens.a}–${x.pens.b})`:""}`).join(", ")}</div>`;
-    if(c.common.length) h+=`<h3>Common opponents</h3>`+c.common.map(x=>`<div class="match"><div class="day" style="grid-column:1/3">${esc(x.opp)}</div><div><span style="color:var(--blue);font-weight:800">${esc(t.label)} ${x.a.gf}–${x.a.ga}</span> &nbsp;·&nbsp; <span style="color:#9a3412;font-weight:800">${esc(oppTeam)} ${x.b.gf}–${x.b.ga}</span></div></div>`).join("");
+    if(c.common.length) h+=`<h3>Common opponents</h3><div class="cmp">`+c.common.map(x=>`<div class="va">${x.a.gf}–${x.a.ga}</div><div class="k" style="text-transform:none;letter-spacing:0;font-size:.9rem;color:var(--ink)">${esc(x.opp)}</div><div class="vb">${x.b.gf}–${x.b.ga}</div>`).join("")+`</div>`;
     else h+=`<div class="sub" style="margin-top:8px">No common opponents yet.</div>`;
     const topList=(gs)=>gs.length?gs.map(x=>`${esc(x.opp)} ${x.gf}–${x.ga}${x.pens?" (pens)":""}`).join(", "):"none yet";
     h+=`<h3>Against the other top-${c.topN} sides</h3><div class="meta"><b style="color:var(--blue)">${esc(t.label)}:</b> ${topList(c.vsTopA)}<br><b style="color:#9a3412">${esc(oppTeam)}:</b> ${topList(c.vsTopB)}</div>`;
