@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.8.2";
+const PAGE_VERSION="1.8.3";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -127,6 +127,22 @@ function saveLocal(){
 }
 function setView(v){view=v;saveLocal();render()}
 
+/* ---------- stale-build guard ---------- */
+// A phone can keep the previous app.js while GitHub Pages already serves a newer index.html (10-minute script
+// cache + a long-lived tab). Compare the version index.html wants with the one running; reload once if they differ.
+let staleChecked=false;
+async function checkForNewBuild(){
+  try{
+    const res=await fetch(location.pathname+"?nocache="+Date.now(),{cache:"no-store"});
+    if(!res.ok) return;
+    const html=await res.text();
+    const m=html.match(/js\/app\.js\?v=([0-9.]+)/);
+    if(m&&m[1]!==PAGE_VERSION){
+      if(!staleChecked){ staleChecked=true; try{ sessionStorage.setItem("tc_reloaded_for",m[1]); }catch(e){} location.reload(); }
+    }
+  }catch(e){}
+}
+
 /* ---------- shared results ---------- */
 function startSupabase(){
   if(!window.supabase){ setSyncStatus("Shared results unavailable (offline); showing cached data.",true); updateAuthUI(); return; }
@@ -137,6 +153,8 @@ function startSupabase(){
     updateAuthUI();
     await loadSharedScores();
     pollTimer=setInterval(()=>loadSharedScores(false),20000);
+    checkForNewBuild(); setInterval(checkForNewBuild,120000);
+    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ loadSharedScores(false); checkForNewBuild(); } });
   })();
 }
 // A paused Supabase project (free tier, idle for a week) refuses every call with a network-style error.
