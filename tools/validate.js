@@ -212,6 +212,22 @@ function mycomlink(T){
   ok(by[7]&&by[7].scoreA===3&&by[7].scoreB===7,"mycomlink: G7 Chelsea 3-7 Reddam");
   ok(by[3]&&by[3].scoreA===5&&by[3].scoreB===1,"mycomlink: G3 Wynberg 5-1 Falcon");
   ok(p.out.every(x=>x.feedRow),"mycomlink: every copied row is tagged as a feed row");
+  // shoot-out shapes: MyComLink "8 (3)\t-\t8 (4)", hand "8-8 (3-4)", hand "8-8 pens 3-4"
+  const sc={}; // make Reddam Bedfordview vs Herschel a real fixture: SF2 participants resolve from earlier results
+  [["saints26jg_G03",1,4],["saints26jg_G07",2,2],["saints26jg_G11",0,3],["saints26jg_G15",5,1],["saints26jg_G19",3,2],["saints26jg_G23",4,4], // group C → Reddam 1st
+   ["saints26jg_G04",5,2],["saints26jg_G08",3,3],["saints26jg_G12",4,4],["saints26jg_G16",2,6],["saints26jg_G20",6,1],["saints26jg_G24",2,3], // group D → Herschel 1st
+   ["saints26jg_G01",3,1],["saints26jg_G05",2,2],["saints26jg_G09",4,0],["saints26jg_G13",1,1],["saints26jg_G17",2,1],["saints26jg_G21",0,2], // group A
+   ["saints26jg_G02",1,1],["saints26jg_G06",3,0],["saints26jg_G10",2,2],["saints26jg_G14",0,1],["saints26jg_G18",1,3],["saints26jg_G22",2,0], // group B
+   ["saints26jg_G25",3,1],["saints26jg_G27",2,4],["saints26jg_G35",2,5],["saints26jg_G36",1,4]].forEach(([id,a,b])=>sc[id]={a,b});
+  const so1=E.parseBulk(T,sc,"Reddam Bedfordview 13A\t8 (3)\t-\t8 (4)\tHerschel 13A");
+  eq(so1.out.length,1,"shoot-out feed row parses");
+  if(so1.out.length){ const r=so1.out[0]; ok(r.game.n===44,"shoot-out row matched SF2 (G44)"); ok(r.scoreA===8&&r.scoreB===8,"full-time read as 8-8, not 8-3"); ok(r.pens&&r.pens.a===3&&r.pens.b===4,"pens read as 3-4"); ok(r.feedRow,"shoot-out feed row still counts as a feed row"); }
+  const so2=E.parseBulk(T,sc,"Herschel 8-8 (4-3) Reddam Bedfordview");
+  ok(so2.out.length===1&&so2.out[0].scoreA===8&&so2.out[0].pens&&so2.out[0].pens.a===3&&so2.out[0].pens.b===4,"hand shoot-out (4-3), reversed order, oriented to fixture sides");
+  const so3=E.parseBulk(T,sc,"Reddam Bedfordview 8-8 pens 3-4 Herschel");
+  ok(so3.out.length===1&&so3.out[0].pens&&so3.out[0].pens.a===3&&so3.out[0].pens.b===4,"hand shoot-out with 'pens'");
+  const so4=E.parseBulk(T,sc,"Reddam Bedfordview 11 - 12 Herschel");
+  ok(so4.out.length===1&&so4.out[0].game.n===44&&so4.out[0].scoreA===11&&so4.out[0].scoreB===12,"plain hand line matches SF2 once participants resolve");
   const hand=E.parseBulk(T,{},"Herschel 5-3 St Dominic's\nKingsmead 2 2 Roedean");
   eq(hand.out.length,2,"hand-typed lines still parse for editors");
   ok(hand.out.every(x=>!x.feedRow),"hand-typed lines are not tagged as feed rows");

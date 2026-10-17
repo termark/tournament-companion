@@ -241,7 +241,16 @@ E.parseBulk=function(T,scores,text){
   String(text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach((line,idx)=>{
     if(/^(sports? (fixtures|results)|team sport results|criteria:|entry \d|page \d|home about|©|\w{3}, \d{2}-\w{3}-\d{4})/i.test(line)) return; // page chrome from a copied results list
     if(!/\d/.test(line)) return; // a line with no score is not a result
-    let norm=E.normalise(E.stripSuffix(line).replace(/\bwin\b\s*-\s*\bforfeit\b/i," 1 - 0 ").replace(/\bforfeit\b\s*-\s*\bwin\b/i," 0 - 1 "));
+    // Shoot-out scores come as "8 (3)" after the full-time score (MyComLink) or "8-8 (3-4)" / "8-8 pens 3-4" by hand.
+    // Pull them out first so the full-time numbers are the only digits left in the middle.
+    let pens=null, work=E.stripSuffix(line);
+    const mm=work.match(/(\d+)\s*\((\d+)\)\s*-\s*(\d+)\s*\((\d+)\)/);
+    if(mm){ pens={a:Number(mm[2]),b:Number(mm[4])}; work=work.replace(mm[0]," "+mm[1]+" - "+mm[3]+" "); }
+    else{
+      const m2=work.match(/\((\d+)\s*[-–:]\s*(\d+)\)|\b(?:pens?|penalties|shoot-?out|so)\s*:?\s*(\d+)\s*[-–:]\s*(\d+)/i);
+      if(m2){ pens={a:Number(m2[1]||m2[3]),b:Number(m2[2]||m2[4])}; work=work.replace(m2[0]," "); }
+    }
+    let norm=E.normalise(work.replace(/\bwin\b\s*-\s*\bforfeit\b/i," 1 - 0 ").replace(/\bforfeit\b\s*-\s*\bwin\b/i," 0 - 1 "));
     // a trailing time/venue fragment ("09:30 Group D :: Saints Polo Pool") belongs to a fixture row, not a result
     if(/^\d{1,2} \d{2} /.test(norm)) return;
     let la=null,ra=null,lt=null,rt=null;
@@ -256,9 +265,11 @@ E.parseBulk=function(T,scores,text){
     if(!g){ errors.push("Line "+(idx+1)+": no fixture (yet) between "+lt+" and "+rt); return; }
     const p=E.participants(T,scores,g);
     const leftIsA=(p.a.team||p.a.current)===lt;
-    // A verbatim results-feed row is tab-separated "Team<sfx> <tab> n <tab> - <tab> n <tab> Team<sfx>" (MyComLink's shape).
-    const feedRow=/^[^\t]+\t+(\d+|win|forfeit)\t+-\t+(\d+|win|forfeit)\t+[^\t]+$/i.test(line);
-    out.push({game:g,scoreA:leftIsA?sa:sb,scoreB:leftIsA?sb:sa,source:line,feedRow});
+    // A verbatim results-feed row is tab-separated "Team<sfx> <tab> n[ (p)] <tab> - <tab> n[ (p)] <tab> Team<sfx>" (MyComLink's shape).
+    const feedRow=/^[^\t]+\t+(\d+(\s*\(\d+\))?|win|forfeit)\t+-\t+(\d+(\s*\(\d+\))?|win|forfeit)\t+[^\t]+$/i.test(line);
+    const row={game:g,scoreA:leftIsA?sa:sb,scoreB:leftIsA?sb:sa,source:line,feedRow};
+    if(pens) row.pens=leftIsA?pens:{a:pens.b,b:pens.a};
+    out.push(row);
   });
   return {out,errors};
 };

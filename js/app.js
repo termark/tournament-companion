@@ -1,6 +1,6 @@
 /* app.js — UI + Supabase sync. All tournament logic lives in js/engine.js; all tournament data in tournaments/*.js */
 "use strict";
-const PAGE_VERSION="1.8.1";
+const PAGE_VERSION="1.8.2";
 const SUPABASE_URL="https://jjqtyytnegfqqdnrunir.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_MbuwtamlmFg5iVqKsPDSHw_dTDeDmT5";
 const E=window.Engine;
@@ -563,9 +563,10 @@ function feedPreview(){
   const skipped=p.out.length-rows.length;
   feedDraft=rows.map(x=>{
     const ex=E.scoreOf(scores,x.game.id);
-    const same=ex.a===x.scoreA&&ex.b===x.scoreB;
+    const exp=x.pens?E.scoreOf(scores,x.game.id+"_pen"):null;
+    const same=ex.a===x.scoreA&&ex.b===x.scoreB&&(!x.pens||(exp.a===x.pens.a&&exp.b===x.pens.b));
     const changed=(ex.a!=null||ex.b!=null)&&!same;
-    return {game:x.game,scoreA:x.scoreA,scoreB:x.scoreB,existingA:ex.a,existingB:ex.b,same,changed};
+    return {game:x.game,scoreA:x.scoreA,scoreB:x.scoreB,pens:x.pens||null,existingA:ex.a,existingB:ex.b,same,changed};
   });
   box.classList.remove("hidden");
   if(!feedDraft.length){
@@ -576,7 +577,7 @@ function feedPreview(){
   const list=feedDraft.map(d=>{
     const p=E.participants(T,scores,d.game);
     const tag=d.same?`<span class="badge soft">already in</span>`:d.changed?`<span class="badge" style="background:#fff8db;color:#8a5a00">changes ${d.existingA}–${d.existingB}</span>`:`<span class="badge" style="background:#dcfce7;color:#166534">new</span>`;
-    return `<div class="fixtureEntry"><div class="fixtureTeams">${esc(p.a.team||p.a.current)} <b>${d.scoreA}–${d.scoreB}</b> ${esc(p.b.team||p.b.current)} ${tag}</div><div class="meta">${esc(d.game.stage==="group"?"Group "+d.game.group:d.game.label)} • ${esc(day(d.game))} ${esc(d.game.time)}</div></div>`;
+    return `<div class="fixtureEntry"><div class="fixtureTeams">${esc(p.a.team||p.a.current)} <b>${d.scoreA}–${d.scoreB}</b>${d.pens?` <span class="meta" style="display:inline">(pens ${d.pens.a}–${d.pens.b})</span>`:""} ${esc(p.b.team||p.b.current)} ${tag}</div><div class="meta">${esc(d.game.stage==="group"?"Group "+d.game.group:d.game.label)} • ${esc(day(d.game))} ${esc(d.game.time)}</div></div>`;
   }).join("");
   box.innerHTML=`<div class="previewOk">${feedDraft.length} result${feedDraft.length===1?"":"s"} found, ${fresh.length} to write</div>${list}`+
     (skipped?`<div class="previewSkipped">${skipped} hand-typed line${skipped===1?"":"s"} ignored — this box only takes rows copied from the results page. Editors can use Quick import below for anything else.</div>`:"")+
@@ -586,7 +587,10 @@ async function feedSubmit(){
   if(!feedDraft.length) feedPreview();
   const fresh=feedDraft.filter(d=>!d.same);
   if(!fresh.length){ setSyncStatus(feedDraft.length?"Shared results already match the pasted page.":"Nothing to write.",!feedDraft.length); return; }
-  const rows=fresh.map(d=>({fixture_id:d.game.id,score_a:Number(d.scoreA),score_b:Number(d.scoreB),updated_at:new Date().toISOString()}));
+  const rows=[]; fresh.forEach(d=>{
+    rows.push({fixture_id:d.game.id,score_a:Number(d.scoreA),score_b:Number(d.scoreB),updated_at:new Date().toISOString()});
+    if(d.pens) rows.push({fixture_id:d.game.id+"_pen",score_a:Number(d.pens.a),score_b:Number(d.pens.b),updated_at:new Date().toISOString()});
+  });
   $("feedSubmit").disabled=true;
   const {error}=await upsertRows(rows);
   $("feedSubmit").disabled=false;
@@ -660,7 +664,7 @@ function buildImportDraft(){
   const p=E.parseBulk(T,scores,$("bulkInput").value);
   importDraft=p.out.map((x,i)=>{
     const existing=E.scoreOf(scores,x.game.id);
-    return {id:i,game:x.game,scoreA:x.scoreA,scoreB:x.scoreB,include:true,existingA:existing.a,existingB:existing.b};
+    return {id:i,game:x.game,scoreA:x.scoreA,scoreB:x.scoreB,pens:x.pens||null,include:true,existingA:existing.a,existingB:existing.b};
   });
   return p;
 }
@@ -694,7 +698,10 @@ async function applyBulk(){
   if(!importDraft.length){ const p=buildImportDraft(); renderImportPreview(p.errors); if(!importDraft.length)return; }
   const selected=importDraft.filter(x=>x.include);
   if(!selected.length){ alert("No results selected."); return; }
-  const rows=selected.map(x=>({fixture_id:x.game.id,score_a:Number(x.scoreA),score_b:Number(x.scoreB),updated_at:new Date().toISOString()}));
+  const rows=[]; selected.forEach(x=>{
+    rows.push({fixture_id:x.game.id,score_a:Number(x.scoreA),score_b:Number(x.scoreB),updated_at:new Date().toISOString()});
+    if(x.pens) rows.push({fixture_id:x.game.id+"_pen",score_a:Number(x.pens.a),score_b:Number(x.pens.b),updated_at:new Date().toISOString()});
+  });
   const conflicts=selected.filter(draftHasConflict);
   if(conflicts.length&&!confirm(`${conflicts.length} selected result${conflicts.length===1?"":"s"} will overwrite existing score${conflicts.length===1?"":"s"}. Continue?`))return;
   const {error}=await upsertRows(rows);

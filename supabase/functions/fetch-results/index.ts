@@ -82,9 +82,12 @@ Deno.serve(async (req) => {
     let unchanged = 0, changed = 0;
     for (const x of feedRows) {
       const ex = E.scoreOf(scores, x.game.id);
-      if (ex.a === x.scoreA && ex.b === x.scoreB) { unchanged++; continue; }
+      const exp = x.pens ? E.scoreOf(scores, x.game.id + "_pen") : null;
+      const same = ex.a === x.scoreA && ex.b === x.scoreB && (!x.pens || (exp.a === x.pens.a && exp.b === x.pens.b));
+      if (same) { unchanged++; continue; }
       if (ex.a != null || ex.b != null) changed++;
       toWrite.push({ fixture_id: x.game.id, score_a: x.scoreA, score_b: x.scoreB, updated_at: new Date().toISOString() });
+      if (x.pens) toWrite.push({ fixture_id: x.game.id + "_pen", score_a: x.pens.a, score_b: x.pens.b, updated_at: new Date().toISOString() });
     }
     if (toWrite.length) {
       const { error } = await sb.from("match_results").upsert(toWrite, { onConflict: "fixture_id" });
