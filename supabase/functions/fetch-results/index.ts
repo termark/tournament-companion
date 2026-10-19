@@ -78,6 +78,27 @@ Deno.serve(async (req) => {
 
     const parsed = E.parseBulk(T, scores, text);
     const feedRows = parsed.out.filter((x: any) => x.feedRow);
+
+    // The results LIST omits penalty shoot-outs; only the per-fixture page shows them ("7 (1)" / "7 (2)").
+    // For every level knockout game without pens, fetch that one fixture page and read the bracketed numbers.
+    const penFetches: string[] = [];
+    for (const x of feedRows) {
+      if (x.game.stage === "group" || x.scoreA !== x.scoreB || x.pens) continue;
+      if (!T.external?.game) break;
+      try {
+        const url = T.external.game(x.game.n);
+        const fr = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (tournament-companion; one fetch per user tap)" } });
+        if (!fr.ok) continue;
+        const txt = (await fr.text()).replace(/<script[\s\S]*?<\/script>/g, "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+        // "Blue: <team> 7 (1) White: <team> 7 (2)" — blue is side a in this tournament's data, white side b (T.caps)
+        const m = txt.match(/Blue:\s*.*?(\d+)\s*\((\d+)\)\s*White:\s*.*?(\d+)\s*\((\d+)\)/);
+        if (!m) continue;
+        const blueFT = Number(m[1]), bluePen = Number(m[2]), whiteFT = Number(m[3]), whitePen = Number(m[4]);
+        if (blueFT !== x.scoreA || whiteFT !== x.scoreB) continue; // sides must line up with the list row
+        x.pens = { a: bluePen, b: whitePen };
+        penFetches.push(x.game.id);
+      } catch { /* leave it level; the page asks for the shoot-out by hand */ }
+    }
     const toWrite: any[] = [];
     let unchanged = 0, changed = 0;
     for (const x of feedRows) {
@@ -95,7 +116,7 @@ Deno.serve(async (req) => {
     }
     return json({
       ok: true, found: feedRows.length, written: toWrite.length, changed, unchanged,
-      games: toWrite.map((r) => r.fixture_id), errors: parsed.errors.slice(0, 10), fetchedAt: new Date().toISOString(),
+      games: toWrite.map((r) => r.fixture_id), penFetches, errors: parsed.errors.slice(0, 10), fetchedAt: new Date().toISOString(),
     });
   } catch (e) {
     return json({ ok: false, error: String((e as Error)?.message ?? e) }, 500);

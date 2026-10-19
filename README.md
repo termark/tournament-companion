@@ -57,6 +57,8 @@ Setup, once per project:
 
 The organisers publish this tournament on MyComLink (event 12099): [fixtures](https://www.mycomlink.co.za/fixture_list.php?eid=12099&dlim=~), [results](https://www.mycomlink.co.za/result_list.php?eid=12099&dlim=~), [Herschel's games](https://www.mycomlink.co.za/fixture_list.php?eid=12099&org=261&agrp=34&dlim=~). Every game on the page links to its MyComLink fixture page (`fixture.php?i=83377 + game number`, verified for all 52), and the Resources card links the event's results and the venue.
 
+MyComLink's results *list* omits penalty shoot-outs (a game won on penalties shows as `7 - 7`); only the per-fixture page carries them (`7 (1)` / `7 (2)`). The Edge Function therefore fetches the fixture page for each level knockout game and writes the shoot-out alongside the score. A pasted list page cannot do this, so after a paste a level knockout game asks for the shoot-out by hand.
+
 MyComLink forbids automated fetching, so results are not polled. The route is: open the results page, select all, copy, paste into **Quick import**. The importer recognises their row shape (`Herschel 13A	9	-	15	St Mary's Waverley 13A`), their short school names, the `13A` age-group suffix and `Win - Forfeit`, and ignores the rest of the page.
 
 ### Quick result import
